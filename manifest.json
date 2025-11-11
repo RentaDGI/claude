@@ -1,0 +1,35 @@
+{
+  "name": "Portal Estiba VLC - Puerto de Valencia",
+  "short_name": "Estiba VLC",
+  "description": "Portal para trabajadores del Puerto de Valencia - Consulta tus jornales, contrataciones y puertas",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a2e5c",
+  "theme_color": "#0a2e5c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/Q91Pi44.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.imgur.com/Q91Pi44.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.imgur.com/Q91Pi44.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "lang": "es-ES",
+  "dir": "ltr",
+  "scope": "./",
+  "prefer_related_applications": false
+}
