@@ -1045,6 +1045,17 @@ async function mostrarChapasDelParte(parteInfo) {
 
   if (!modal) return;
 
+  // Función para obtener el emoji de un puesto
+  const getEmojiPuesto = (puesto) => {
+    const puestoLower = puesto.toLowerCase();
+    if (puestoLower.includes('conductor de 1')) return '🚚';
+    if (puestoLower.includes('conductor de 2')) return '🚗';
+    if (puestoLower.includes('trincador de coches') || puestoLower.includes('trincador de coche')) return '👷';
+    if (puestoLower.includes('trincador')) return '👷';
+    if (puestoLower.includes('especialista')) return '👷';
+    return '👤'; // emoji por defecto
+  };
+
   // Mostrar modal
   modal.style.display = 'flex';
   loading.classList.remove('hidden');
@@ -1107,7 +1118,7 @@ async function mostrarChapasDelParte(parteInfo) {
       const header = document.createElement('div');
       header.className = 'puesto-group-header';
       header.innerHTML = `
-        <h3 class="puesto-group-title">${puesto}</h3>
+        <h3 class="puesto-group-title">${getEmojiPuesto(puesto)} ${puesto}</h3>
         <span class="puesto-group-count">${chapas.length} chapa${chapas.length > 1 ? 's' : ''}</span>
       `;
 
@@ -1161,7 +1172,7 @@ async function mostrarChapasDelParte(parteInfo) {
       card.className = 'modal-resumen-card';
       card.innerHTML = `
         <div class="modal-resumen-numero">${cantidad}</div>
-        <div class="modal-resumen-puesto">${puesto}</div>
+        <div class="modal-resumen-puesto">${getEmojiPuesto(puesto)} ${puesto}</div>
       `;
       resumenGrid.appendChild(card);
     });
