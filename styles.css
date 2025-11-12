@@ -2264,7 +2264,7 @@ body::before {
 }
 
 .puesto-group-header {
-  background: linear-gradient(135deg, var(--puerto-blue), var(--puerto-dark-blue));
+  background: var(--puerto-dark-blue);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 12px;
@@ -2279,12 +2279,12 @@ body::before {
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
-  color: white;
-  opacity: 1;
+  color: #ffffff;
 }
 
 .puesto-group-count {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--puerto-orange);
+  color: white;
   padding: 0.375rem 0.875rem;
   border-radius: 20px;
   font-size: 0.875rem;
@@ -2317,7 +2317,7 @@ body::before {
 .chapa-numero {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--puerto-blue);
+  color: var(--puerto-orange);
   margin-bottom: 0.25rem;
 }
 
@@ -2417,8 +2417,8 @@ body::before {
 }
 
 .modal-resumen-titulo {
-  background: linear-gradient(135deg, var(--puerto-blue), var(--puerto-dark-blue));
-  color: white;
+  background: var(--puerto-dark-blue);
+  color: #ffffff;
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
@@ -2429,16 +2429,14 @@ body::before {
 }
 
 .modal-resumen-titulo span {
-  color: white;
-  opacity: 1;
+  color: #ffffff;
 }
 
 .modal-resumen-titulo svg {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  color: white;
-  opacity: 1;
+  color: #ffffff;
 }
 
 .modal-resumen-grid {
@@ -2470,7 +2468,7 @@ body::before {
 .modal-resumen-numero {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--puerto-blue);
+  color: var(--puerto-orange);
   line-height: 1;
 }
 
