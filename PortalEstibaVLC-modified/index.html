@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Estiba VLC - Puerto de Valencia</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Portal para trabajadores del Puerto de Valencia - Consulta tus jornales, contrataciones y puertas">
+  <meta name="theme-color" content="#0a2e5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Estiba VLC">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Icons -->
+  <link rel="icon" type="image/png" href="https://i.imgur.com/Q91Pi44.png">
+  <link rel="apple-touch-icon" href="https://i.imgur.com/Q91Pi44.png">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header fijo -->
+  <header id="app-header" class="header-main">
+    <div class="header-content">
+      <div class="header-logo">
+        <img src="https://i.imgur.com/7F1BWQ2.jpeg" alt="Puerto Valencia" class="logo-img">
+        <div class="logo-text">
+          <h1>Portal Estiba VLC</h1>
+          <p>Puerto de Valencia</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="menuBtn" class="menu-btn md:hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div id="user-info" class="user-info hidden">
+          <span id="user-chapa" class="user-chapa"></span>
+          <button id="change-password-btn" class="settings-btn" title="Cambiar Contraseña">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button id="logoutBtn" class="logout-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13.586 5 15 6.414z" clip-rule="evenodd" />
+            </svg>
+            Salir
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar navegación -->
+  <aside id="sidebar" class="sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-link" data-page="dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        Dashboard
+      </button>
+      <button class="nav-link" data-page="contratacion">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        Mi Contratación
+      </button>
+      <button class="nav-link" data-page="jornales">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Mis Jornales
+      </button>
+      <button class="nav-link" data-page="sueldometro">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Sueldómetro
+      </button>
+      <button class="nav-link" data-page="puertas">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        Puertas
+      </button>
+      <button class="nav-link" data-page="censo">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        Censo
+      </button>
+      <button class="nav-link" data-page="enlaces">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+        Enlaces Útiles
+      </button>
+      <button class="nav-link" data-page="noticias">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+        </svg>
+        Noticias
+      </button>
+      <button class="nav-link" data-page="foro">
+        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+        </svg>
+        Foro
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Overlay para cerrar sidebar en móvil -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <!-- Contenido principal -->
+  <main id="main-content" class="main-content">
+
+    <!-- PÁGINA DE LOGIN -->
+    <section id="page-login" class="page active">
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-hero">
+            <img src="https://i.imgur.com/xcHiyAn.jpeg" alt="Puerto de Valencia">
+            <div class="login-hero-overlay">
+              <h2>Bienvenido</h2>
+              <p>Portal de Estibadores Eventuales</p>
+            </div>
+          </div>
+          <div class="login-form">
+            <div class="form-group">
+              <label for="chapa-input">Número de Chapa</label>
+              <input type="number" id="chapa-input" placeholder="Introduce tu número de chapa" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="password-input">Contraseña</label>
+              <input type="password" id="password-input" placeholder="Introduce tu contraseña" autocomplete="current-password">
+            </div>
+            <p id="login-error" class="error-message">Por favor, verifica tu chapa y contraseña</p>
+            <button id="login-btn" class="btn-primary btn-large">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              Acceder al Portal
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA DASHBOARD -->
+    <section id="page-dashboard" class="page">
+      <div class="page-hero">
+        <img src="https://i.imgur.com/bSOecVC.jpeg" alt="Puerto de Valencia">
+        <div class="page-hero-content">
+          <h2>Portal de Estibadores Eventuales</h2>
+          <p>Puerto de Valencia - Información en tiempo real</p>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="welcome-card">
+          <h3 id="welcome-message">Bienvenido al Portal</h3>
+          <p>Accede rápidamente a toda tu información laboral</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-card" data-navigate="contratacion">
+            <div class="dashboard-card-icon blue">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <h3>Mi Contratación</h3>
+            <p>Consulta tus asignaciones del día</p>
+            <img src="https://i.imgur.com/guKCoFy.jpeg" alt="Contenedores">
+          </div>
+
+          <div class="dashboard-card" data-navigate="jornales">
+            <div class="dashboard-card-icon green">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3>Mis Jornales</h3>
+            <p>Seguimiento de jornales por quincena</p>
+            <img src="https://i.imgur.com/C3UpaWV.jpeg" alt="Terminal">
+          </div>
+
+          <div class="dashboard-card" data-navigate="puertas">
+            <div class="dashboard-card-icon orange">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3>Puertas</h3>
+            <p>Consulta las puertas del día</p>
+            <img src="https://i.imgur.com/gUw97fH.jpeg" alt="Puertas">
+          </div>
+
+          <div class="dashboard-card" data-navigate="censo">
+            <div class="dashboard-card-icon purple">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3>Censo</h3>
+            <p>Consulta el censo de disponibilidad</p>
+            <img src="https://i.imgur.com/iHJOi0K.jpeg" alt="Operativa">
+          </div>
+
+          <div class="dashboard-card" data-navigate="noticias">
+            <div class="dashboard-card-icon red">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+            </div>
+            <h3>Noticias</h3>
+            <p>Últimas comunicaciones importantes</p>
+            <img src="https://i.imgur.com/7F1BWQ2.jpeg" alt="Noticias">
+          </div>
+
+          <div class="dashboard-card" data-navigate="foro">
+            <div class="dashboard-card-icon teal">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+            </div>
+            <h3>Foro</h3>
+            <p>Conecta con otros estibadores</p>
+            <img src="https://i.imgur.com/xcHiyAn.jpeg" alt="Foro">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA MI CONTRATACIÓN -->
+    <section id="page-contratacion" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/guKCoFy.jpeg" alt="Operativa Terminal">
+        <div class="page-hero-content">
+          <h2>Mi Contratación</h2>
+          <p>Asignaciones del día en tiempo real</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="contratacion-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando asignaciones...</p>
+        </div>
+        <div id="contratacion-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA MIS JORNALES -->
+    <section id="page-jornales" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/C3UpaWV.jpeg" alt="Puerto Valencia Jornales">
+        <div class="page-hero-content">
+          <h2>Mis Jornales</h2>
+          <p>Seguimiento por quincena</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="jornales-stats" class="stats-grid"></div>
+        <div id="jornales-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando jornales...</p>
+        </div>
+        <div id="jornales-content"></div>
+      </div>
+
+      <!-- Botón flotante para sincronizar desde CSV -->
+      <button id="sync-jornales-btn" class="fab-sync-jornal" title="Sincronizar desde CSV">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+
+      <!-- Botón flotante para añadir jornal -->
+      <button id="add-jornal-btn" class="fab-add-jornal" title="Añadir jornal manualmente">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+    </section>
+
+    <!-- PÁGINA SUELDÓMETRO -->
+    <section id="page-sueldometro" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/C3UpaWV.jpeg" alt="Sueldómetro">
+        <div class="page-hero-content">
+          <h2>💰 Sueldómetro</h2>
+          <p>Estimación de tu salario por quincena</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="sueldometro-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Calculando salarios...</p>
+        </div>
+        <div id="sueldometro-irpf-control" class="irpf-control" style="display: none;">
+          <div class="irpf-control-content">
+            <label for="irpf-input">
+              <span class="irpf-label">% IRPF:</span>
+              <input type="number" id="irpf-input" min="0" max="50" step="0.1" value="15" />
+              <button id="irpf-lock-btn" class="lock-btn" title="Bloquear IRPF para que no cambie">🔓</button>
+              <span class="irpf-help">Introduce tu porcentaje de retención y bloquéalo con 🔒</span>
+            </label>
+          </div>
+        </div>
+        <div id="sueldometro-stats" class="stats-grid"></div>
+        <div id="sueldometro-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA PUERTAS -->
+    <section id="page-puertas" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/gUw97fH.jpeg" alt="Puertas Puerto">
+        <div class="page-hero-content">
+          <h2 id="puertas-titulo">Puertas del Día</h2>
+          <p id="puertas-fecha">Información actualizada de puertas</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="puertas-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando puertas...</p>
+        </div>
+        <div id="puertas-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA CENSO -->
+    <section id="page-censo" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/iHJOi0K.jpeg" alt="Censo">
+        <div class="page-hero-content">
+          <h2>Censo de Disponibilidad</h2>
+          <p>Estado actual de la bolsa de eventuales</p>
+        </div>
+      </div>
+      <div class="container">
+        <!-- Leyenda de colores -->
+        <div class="censo-legend">
+          <div class="censo-legend-item">
+            <span class="censo-legend-color green"></span>
+            <span>Verde: Disponible</span>
+          </div>
+          <div class="censo-legend-item">
+            <span class="censo-legend-color blue"></span>
+            <span>Azul: 3 jornadas</span>
+          </div>
+          <div class="censo-legend-item">
+            <span class="censo-legend-color yellow"></span>
+            <span>Amarillo: 2 jornadas</span>
+          </div>
+          <div class="censo-legend-item">
+            <span class="censo-legend-color orange"></span>
+            <span>Naranja: 1 jornada</span>
+          </div>
+          <div class="censo-legend-item">
+            <span class="censo-legend-color red"></span>
+            <span>Rojo: No disponible</span>
+          </div>
+        </div>
+
+        <div id="censo-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando censo...</p>
+        </div>
+        <div id="censo-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA ENLACES -->
+    <section id="page-enlaces" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/7F1BWQ2.jpeg" alt="Enlaces">
+        <div class="page-hero-content">
+          <h2>Enlaces y Formularios</h2>
+          <p>Accesos rápidos a recursos útiles</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="enlaces-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA NOTICIAS -->
+    <section id="page-noticias" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/bSOecVC.jpeg" alt="Noticias">
+        <div class="page-hero-content">
+          <h2>Noticias y Avisos</h2>
+          <p>Comunicaciones importantes</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="noticias-content"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA FORO -->
+    <section id="page-foro" class="page">
+      <div class="page-hero small">
+        <img src="https://i.imgur.com/xcHiyAn.jpeg" alt="Foro">
+        <div class="page-hero-content">
+          <h2>💬 Foro de Compañeros</h2>
+          <p>Comunícate con otros estibadores</p>
+        </div>
+      </div>
+      <div class="container foro-container">
+        <div id="foro-messages" class="foro-messages"></div>
+      </div>
+
+      <!-- Botón scroll hacia abajo -->
+      <button id="scroll-to-bottom-btn" class="scroll-to-bottom-btn" style="display: none;" title="Ir a mensajes recientes">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/>
+        </svg>
+      </button>
+
+      <!-- Composer fijo en la parte inferior -->
+      <div id="foro-composer" class="foro-composer">
+        <div class="foro-composer-inner">
+          <textarea id="foro-input" placeholder="Escribe tu mensaje..." rows="2" maxlength="500"></textarea>
+          <div class="foro-composer-actions">
+            <span id="foro-char-count" class="foro-char-count">0/500</span>
+            <button id="foro-send" class="btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL - CHAPAS DEL PARTE -->
+  <div id="modal-chapas-parte" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-chapas-titulo">Chapas contratadas en el parte</h2>
+          <p id="modal-chapas-subtitulo" style="color: #ffffff; margin-top: 0.5rem; font-size: 0.9rem;"></p>
+        </div>
+        <button id="modal-chapas-close" class="modal-close-btn" aria-label="Cerrar">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-chapas-loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando chapas...</p>
+        </div>
+        <div id="modal-chapas-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para cambiar contraseña -->
+  <div id="change-password-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Cambiar Contraseña</h3>
+        <button id="close-password-modal" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="current-password">Contraseña Actual</label>
+          <input type="password" id="current-password" placeholder="Introduce tu contraseña actual" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label for="new-password">Nueva Contraseña</label>
+          <input type="password" id="new-password" placeholder="Introduce tu nueva contraseña" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirmar Nueva Contraseña</label>
+          <input type="password" id="confirm-password" placeholder="Confirma tu nueva contraseña" autocomplete="new-password">
+        </div>
+        <p id="password-change-error" class="error-message"></p>
+        <p id="password-change-success" class="success-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-password-change" class="btn-secondary">Cancelar</button>
+        <button id="confirm-password-change" class="btn-primary">Cambiar Contraseña</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para añadir jornal manual -->
+  <div id="add-jornal-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>➕ Añadir Jornal Manual</h3>
+        <button id="close-jornal-modal" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="jornal-fecha">Fecha *</label>
+          <input type="date" id="jornal-fecha" required>
+        </div>
+        <div class="form-group">
+          <label for="jornal-jornada">Jornada *</label>
+          <select id="jornal-jornada" required>
+            <option value="">Selecciona una jornada</option>
+            <option value="02 a 08">02 a 08</option>
+            <option value="08 a 14">08 a 14</option>
+            <option value="14 a 20">14 a 20</option>
+            <option value="20 a 02">20 a 02</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="jornal-tipo-dia">Tipo de Día *</label>
+          <select id="jornal-tipo-dia" required>
+            <option value="">Selecciona tipo de día</option>
+            <option value="LABORABLE">Laborable</option>
+            <option value="SABADO">Sábado</option>
+            <option value="FESTIVO">Festivo</option>
+            <option value="FEST. A LAB.">Festivo a Laborable (20-02)</option>
+            <option value="LAB A FEST">Laborable a Festivo (20-02)</option>
+            <option value="FEST. A FEST.">Festivo a Festivo (20-02)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="jornal-puesto">Puesto *</label>
+          <select id="jornal-puesto" required>
+            <option value="">Selecciona un puesto</option>
+            <option value="Especialista">Especialista</option>
+            <option value="Conductor de 1a">Conductor de 1a</option>
+            <option value="Conductor de 2a">Conductor de 2a</option>
+            <option value="Conductor de Coches">Conductor de Coches</option>
+            <option value="Trincador">Trincador</option>
+            <option value="Trincador de Coches">Trincador de Coches</option>
+            <option value="otro">Otro (especificar)</option>
+          </select>
+        </div>
+        <div class="form-group" id="jornal-puesto-otro-group" style="display: none;">
+          <label for="jornal-puesto-otro">Especifica el puesto</label>
+          <input type="text" id="jornal-puesto-otro" placeholder="Ej: Gruista">
+        </div>
+        <div class="form-group">
+          <label for="jornal-empresa">Empresa *</label>
+          <select id="jornal-empresa" required>
+            <option value="">Selecciona una empresa</option>
+            <option value="MSC">MSC</option>
+            <option value="CSP">CSP</option>
+            <option value="APM">APM</option>
+            <option value="ERH">ERH</option>
+            <option value="TRASMED">TRASMED</option>
+            <option value="VTEU">VTEU</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="jornal-buque">Buque</label>
+          <input type="text" id="jornal-buque" placeholder="Ej: MSC SARA (opcional)">
+        </div>
+        <div class="form-group">
+          <label for="jornal-parte">Parte</label>
+          <input type="number" id="jornal-parte" placeholder="Ej: 1" min="1">
+        </div>
+        <p id="jornal-error" class="error-message"></p>
+        <p id="jornal-success" class="success-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-jornal" class="btn-secondary">Cancelar</button>
+        <button id="save-jornal" class="btn-primary">Guardar Jornal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para reportar bugs -->
+  <div id="report-jornal-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🐛 Reportar Bug o Problema</h3>
+        <button id="close-report-modal" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem; color: var(--puerto-dark-blue); font-size: 0.875rem;">
+          Ayúdanos a mejorar la aplicación reportando cualquier error o problema que encuentres.
+        </p>
+        <div class="form-group">
+          <label for="report-chapa">Chapa *</label>
+          <input type="number" id="report-chapa" placeholder="Tu número de chapa" required readonly>
+        </div>
+        <div class="form-group">
+          <label for="report-tipo">Tipo de problema *</label>
+          <select id="report-tipo" required>
+            <option value="">Selecciona el tipo de problema</option>
+            <option value="Error de carga">Error de carga de datos</option>
+            <option value="Error visual">Error visual / diseño</option>
+            <option value="Funcionalidad">Problema con funcionalidad</option>
+            <option value="Performance">Lentitud / Performance</option>
+            <option value="Login">Problema con login/contraseña</option>
+            <option value="Datos incorrectos">Datos incorrectos mostrados</option>
+            <option value="Sugerencia">Sugerencia de mejora</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="report-descripcion">Descripción del problema *</label>
+          <textarea id="report-descripcion" rows="5" placeholder="Describe detalladamente el problema que encontraste..." required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;"></textarea>
+        </div>
+        <p id="report-error" class="error-message"></p>
+        <p id="report-success" class="success-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-report" class="btn-secondary">Cancelar</button>
+        <button id="send-report" class="btn-primary">Enviar Reporte</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón de instalación PWA flotante -->
+  <button id="install-pwa-btn" class="install-pwa-btn" aria-label="Instalar aplicación">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Instalar App
+  </button>
+
+  <!-- Scripts -->
+  <!-- jsPDF para exportar a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Supabase Library (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Data Layer: Usa supabase.js para base de datos PostgreSQL -->
+  <!-- NOTA: Para volver a Google Sheets, reemplaza supabase.js con sheets.js -->
+  <script src="supabase.js?v=22"></script>
+
+  <script src="app.js?v=22"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    // Registrar el Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(registration => {
+            console.log('✅ Service Worker registrado:', registration.scope);
+
+            // Verificar actualizaciones
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              console.log('🔄 Nueva versión de Service Worker encontrada');
+
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // Nueva versión disponible, ofrecer recargar
+                  console.log('🆕 Nueva versión disponible');
+                  if (confirm('Hay una nueva versión de la app disponible. ¿Deseas actualizar ahora?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch(error => {
+            console.warn('❌ Error registrando Service Worker:', error);
+          });
+
+        // Detectar cuando el Service Worker se actualiza (solo después de confirmación del usuario)
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          console.log('🔄 Service Worker actualizado, recargando...');
+          // Solo recargar si el usuario ya confirmó (se llamó a SKIP_WAITING)
+          // No recargar automáticamente sin confirmación
+        });
+      });
+    }
+
+    // Detectar modo instalación PWA y mostrar botón personalizado
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-pwa-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevenir el prompt automático
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Mostrar botón de instalación solo en la página de login
+      console.log('💡 La app puede ser instalada - mostrando botón');
+      if (installBtn) {
+        // Función para verificar si estamos en login
+        const checkAndShowButton = () => {
+          const currentPage = document.querySelector('.page.active')?.id;
+          if (currentPage === 'login') {
+            installBtn.classList.add('visible');
+          } else {
+            installBtn.classList.remove('visible');
+          }
+        };
+
+        // Verificar inmediatamente
+        checkAndShowButton();
+
+        // Verificar cada vez que cambie la página (solo si existe el elemento)
+        const appElement = document.getElementById('app');
+        if (appElement) {
+          const observer = new MutationObserver(checkAndShowButton);
+          observer.observe(appElement, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['class']
+          });
+        }
+      }
+    });
+
+    // Manejar clic en el botón de instalación
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          console.log('⚠️ No hay prompt de instalación disponible');
+          // En iOS Safari, mostrar instrucciones
+          if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            alert('Para instalar en iOS:\n\n1. Toca el botón Compartir (📤)\n2. Desplázate y toca "Agregar a pantalla de inicio"\n3. Toca "Agregar"');
+          }
+          return;
+        }
+
+        // Mostrar el prompt nativo de instalación
+        deferredPrompt.prompt();
+
+        // Esperar la respuesta del usuario
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`👤 Usuario ${outcome === 'accepted' ? 'aceptó' : 'rechazó'} la instalación`);
+
+        // Ocultar botón después de mostrar el prompt
+        installBtn.classList.remove('visible');
+        deferredPrompt = null;
+      });
+    }
+
+    // Detectar si la app fue instalada
+    window.addEventListener('appinstalled', () => {
+      console.log('✅ ¡App instalada exitosamente!');
+      if (installBtn) {
+        installBtn.classList.remove('visible');
+      }
+      deferredPrompt = null;
+    });
+
+    // Detectar modo standalone (app ya instalada) - ocultar botón
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      console.log('📱 App ejecutándose en modo instalado');
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
+
