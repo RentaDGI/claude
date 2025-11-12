@@ -1136,18 +1136,46 @@ async function mostrarChapasDelParte(parteInfo) {
       content.appendChild(puestoGroup);
     });
 
-    // Mostrar resumen total
+    // Mostrar resumen total con desglose por puesto
     const resumen = document.createElement('div');
-    resumen.style.marginTop = '2rem';
-    resumen.style.padding = '1.5rem';
-    resumen.style.background = 'var(--background-secondary)';
-    resumen.style.borderRadius = '12px';
-    resumen.style.textAlign = 'center';
-    resumen.style.fontWeight = '600';
-    resumen.style.color = 'var(--puerto-dark-blue)';
-    resumen.innerHTML = `
-      📊 Total: ${chapasDelParte.length} trabajador${chapasDelParte.length > 1 ? 'es' : ''} en ${puestosOrdenados.length} puesto${puestosOrdenados.length > 1 ? 's' : ''}
+    resumen.className = 'modal-resumen-container';
+
+    // Título del resumen
+    const resumenTitulo = document.createElement('div');
+    resumenTitulo.className = 'modal-resumen-titulo';
+    resumenTitulo.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span>Resumen del Parte</span>
     `;
+    resumen.appendChild(resumenTitulo);
+
+    // Grid de puestos con su cantidad
+    const resumenGrid = document.createElement('div');
+    resumenGrid.className = 'modal-resumen-grid';
+
+    puestosOrdenados.forEach(puesto => {
+      const cantidad = chapasPorPuesto[puesto].length;
+      const card = document.createElement('div');
+      card.className = 'modal-resumen-card';
+      card.innerHTML = `
+        <div class="modal-resumen-numero">${cantidad}</div>
+        <div class="modal-resumen-puesto">${puesto}</div>
+      `;
+      resumenGrid.appendChild(card);
+    });
+
+    resumen.appendChild(resumenGrid);
+
+    // Total general
+    const totalGeneral = document.createElement('div');
+    totalGeneral.className = 'modal-resumen-total';
+    totalGeneral.innerHTML = `
+      <strong>Total:</strong> ${chapasDelParte.length} trabajador${chapasDelParte.length > 1 ? 'es' : ''}
+    `;
+    resumen.appendChild(totalGeneral);
+
     content.appendChild(resumen);
 
   } catch (error) {
