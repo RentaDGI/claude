@@ -34,8 +34,8 @@ const SHEETS_CONFIG = {
   URL_MAPEO_PUESTOS: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=418043978',
   URL_TABLA_SALARIOS: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=1710373929',
 
-  // URL del Apps Script (Web App deployada) - ACTUALIZADA
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxn3kv_G0-qDjJwUqOdnOIFMN0zjfz12UbvSdei9VYsJ94y2kVccpFO5ZPF2KSpx862lw/exec'
+  // URL del Apps Script (Web App deployada) - ACTUALIZADA CON FIX DE CONTRASEÑAS
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzFH4VtRAufijIJ6iG83c5Nt1xRLmmjmVZLezCa5ss7kFX5vSPdoxBviKms_pRXv0o1wg/exec'
 };
 
 /**
@@ -1632,3 +1632,5 @@ function clearSheetsCache() {
 // Exponer API globalmente
 window.SheetsAPI = SheetsAPI;
 window.clearSheetsCache = clearSheetsCache;
+
+
