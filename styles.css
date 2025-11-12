@@ -2201,7 +2201,7 @@ body::before {
 .modal-header {
   padding: 1.5rem 2rem;
   border-bottom: 2px solid var(--border-color);
-  background: #051937 !important;
+  background: #0a2e5c !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2276,7 +2276,7 @@ body::before {
 }
 
 .puesto-group-header {
-  background: #051937 !important;
+  background: #0a2e5c !important;
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 12px;
@@ -2435,7 +2435,7 @@ body::before {
 }
 
 .modal-resumen-titulo {
-  background: #051937 !important;
+  background: #0a2e5c !important;
   color: #ffffff !important;
   padding: 1rem 1.5rem;
   display: flex;

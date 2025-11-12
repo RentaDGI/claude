@@ -1119,7 +1119,7 @@ async function mostrarChapasDelParte(parteInfo) {
       header.className = 'puesto-group-header';
       header.innerHTML = `
         <h3 class="puesto-group-title">${getEmojiPuesto(puesto)} ${puesto}</h3>
-        <span class="puesto-group-count">${chapas.length} chapa${chapas.length > 1 ? 's' : ''}</span>
+        <span class="puesto-group-count">${chapas.length} asignacion${chapas.length > 1 ? 'es' : ''}</span>
       `;
 
       const grid = document.createElement('div');
