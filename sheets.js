@@ -1669,5 +1669,3 @@ function clearSheetsCache() {
 window.SheetsAPI = SheetsAPI;
 window.clearSheetsCache = clearSheetsCache;
 
-
-

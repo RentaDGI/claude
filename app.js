@@ -1065,10 +1065,7 @@ async function mostrarChapasDelParte(parteInfo) {
   titulo.textContent = `Parte ${parteInfo.parte}`;
   subtitulo.textContent = `${parteInfo.empresa} • ${parteInfo.buque} • ${parteInfo.fecha} • ${parteInfo.jornada}`;
 
-  try {
-    console.log('🔍 Buscando chapas para el parte:', parteInfo.parte);
-
-    // Obtener TODOS los jornales del histórico (sin filtrar por usuario)
+  try {    // Obtener TODOS los jornales del histórico (sin filtrar por usuario)
     const jornalesHistorico = await SheetsAPI.getAllJornalesHistoricoAcumulado();
 
     // Filtrar chapas del mismo parte, fecha y jornada
@@ -2719,9 +2716,7 @@ async function loadSueldometro() {
       }
 
       // Debug del primer jornal
-      if (index === 0) {
-        console.log('🔍 DEBUG PRIMER JORNAL:');
-        console.log('  Jornal:', jornal);
+      if (index === 0) {        console.log('  Jornal:', jornal);
         console.log('  Puesto original:', jornal.puesto);
         console.log('  Puesto normalizado:', puestoLower);
         console.log('  Mapeo encontrado:', mapeo);
@@ -4094,9 +4089,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initReportJornal();
   initForoEnhanced();
 });
-
-
-
-
-
 

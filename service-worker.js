@@ -30,7 +30,8 @@ self.addEventListener('install', event => {
           });
       })
   );
-  self.skipWaiting();
+  // No hacer skipWaiting automático - esperar a que el usuario confirme
+  // self.skipWaiting();
 });
 
 // Activación - limpiar cachés antiguos

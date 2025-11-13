@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertir Primas Personalizadas CSV a SQL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .instrucciones {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .instrucciones h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .instrucciones ol {
+            margin-left: 20px;
+            color: #555;
+            font-size: 14px;
+        }
+        .instrucciones li {
+            margin-bottom: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #csvInput {
+            min-height: 200px;
+        }
+        #sqlOutput {
+            min-height: 300px;
+            background-color: #f8f9fa;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 10px 20px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .estructura {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Convertir Primas Personalizadas CSV a SQL</h1>
+        <p class="subtitle">Conversor de CSV de Google Sheets a SQL INSERT para Supabase</p>
+
+        <div class="instrucciones">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>En Google Sheets, selecciona TODAS las celdas de la pestaña "Primas_personalizadas" (incluye los encabezados)</li>
+                <li>Copia (Ctrl+C)</li>
+                <li>Pega aquí abajo</li>
+                <li>Haz clic en "Convertir a SQL"</li>
+                <li>Copia el SQL generado y pégalo en Supabase SQL Editor</li>
+            </ol>
+        </div>
+
+        <div class="estructura">
+            <strong>Estructura esperada:</strong> Chapa, Fecha, Jornada, Prima_Personalizada, Movimientos_Personalizados, Relevo, Remate, Ultima_Actualizacion
+        </div>
+
+        <label for="csvInput">Pega aquí el CSV copiado de Google Sheets:</label>
+        <textarea id="csvInput" placeholder="Chapa	Fecha	Jornada	Prima_Personalizada	Movimientos_Personalizados	Relevo	Remate	Ultima_Actualizacion
+582	03/11/2025	14-20	73,44	120	0	0	7/11/2025 19:37:20"></textarea>
+
+        <button onclick="convertir()">🔄 Convertir a SQL</button>
+        <button onclick="copiar()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📋 Copiar SQL</button>
+
+        <label for="sqlOutput">SQL generado (copia y pega en Supabase):</label>
+        <textarea id="sqlOutput" readonly></textarea>
+
+        <div class="info">
+            ⚠️ <strong>Importante:</strong> Antes de ejecutar el SQL, asegúrate de haber ejecutado primero el archivo <code>fix-tablas-estructura-correcta.sql</code> en Supabase para crear la tabla con la estructura correcta.
+        </div>
+    </div>
+
+    <script>
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const data = [];
+
+            // Detectar separador (coma o tabulador)
+            const separator = lines[0].includes('\t') ? '\t' : ',';
+
+            const headers = lines[0].split(separator).map(h => h.trim());
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(separator);
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+
+            return data;
+        }
+
+        function convertirFecha(fechaStr) {
+            if (!fechaStr || fechaStr.trim() === '') return null;
+
+            // Si ya está en formato ISO (YYYY-MM-DD)
+            if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                return fechaStr;
+            }
+
+            // Si está en formato DD/MM/YYYY (formato español)
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fechaStr)) {
+                const [dia, mes, anio] = fechaStr.split('/');
+                return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+            }
+
+            return null;
+        }
+
+        function convertirTimestamp(timestampStr) {
+            if (!timestampStr || timestampStr.trim() === '') return null;
+
+            // Si ya está en formato ISO (YYYY-MM-DD HH:MM:SS)
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timestampStr)) {
+                return timestampStr;
+            }
+
+            // Si está en formato DD/MM/YYYY HH:MM:SS (formato español con hora)
+            const match = timestampStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/);
+            if (match) {
+                const [, dia, mes, anio, hora, minuto, segundo] = match;
+                return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')} ${hora.padStart(2, '0')}:${minuto}:${segundo}`;
+            }
+
+            // Si solo tiene fecha sin hora, convertir a fecha
+            const fecha = convertirFecha(timestampStr);
+            if (fecha) {
+                return `${fecha} 00:00:00`;
+            }
+
+            return null;
+        }
+
+        function parseDecimalEspanol(value) {
+            if (!value || value.trim() === '') return 0;
+            // Reemplazar coma por punto para formato SQL
+            return parseFloat(String(value).replace(',', '.')) || 0;
+        }
+
+        function escapeSql(value) {
+            if (value === null || value === undefined || value === '') return 'NULL';
+            return "'" + String(value).replace(/'/g, "''") + "'";
+        }
+
+        function convertir() {
+            const csv = document.getElementById('csvInput').value.trim();
+
+            if (!csv) {
+                alert('❌ Por favor, pega el CSV de Google Sheets primero');
+                return;
+            }
+
+            try {
+                const data = parseCSV(csv);
+
+                if (data.length === 0) {
+                    alert('❌ No se encontraron datos para convertir');
+                    return;
+                }
+
+                // Eliminar duplicados: solo conservar el último registro por (chapa, fecha, jornada)
+                const primasMap = new Map();
+                data.forEach(row => {
+                    const chapa = row.Chapa;
+                    const fecha = convertirFecha(row.Fecha);
+                    const jornada = row.Jornada || '';
+
+                    if (chapa && fecha) {
+                        const key = `${chapa}|${fecha}|${jornada}`;
+                        // Siempre sobrescribir, así se queda el último
+                        primasMap.set(key, row);
+                    }
+                });
+
+                const uniqueData = Array.from(primasMap.values());
+
+                let sql = `-- ============================================\n`;
+                sql += `-- Importación de Primas Personalizadas (${uniqueData.length} registros únicos)\n`;
+                sql += `-- ============================================\n\n`;
+                sql += `INSERT INTO primas_personalizadas (chapa, fecha, jornada, prima_personalizada, movimientos_personalizados, relevo, remate, ultima_actualizacion) VALUES\n`;
+
+                const values = [];
+                let skipped = 0;
+
+                uniqueData.forEach((row, index) => {
+                    const chapa = row.Chapa;
+                    const fecha = convertirFecha(row.Fecha);
+
+                    if (!chapa || !fecha) {
+                        skipped++;
+                        console.warn(`Fila ${index + 2} omitida: chapa o fecha inválida`);
+                        return;
+                    }
+
+                    const jornada = escapeSql(row.Jornada);
+                    const primaPersonalizada = parseDecimalEspanol(row.Prima_Personalizada);
+                    const movimientosPersonalizados = parseDecimalEspanol(row.Movimientos_Personalizados);
+                    const relevo = parseDecimalEspanol(row.Relevo);
+                    const remate = parseDecimalEspanol(row.Remate);
+                    const ultimaActualizacion = convertirTimestamp(row.Ultima_Actualizacion);
+
+                    if (ultimaActualizacion) {
+                        values.push(`  ('${chapa}', '${fecha}', ${jornada}, ${primaPersonalizada}, ${movimientosPersonalizados}, ${relevo}, ${remate}, '${ultimaActualizacion}')`);
+                    } else {
+                        values.push(`  ('${chapa}', '${fecha}', ${jornada}, ${primaPersonalizada}, ${movimientosPersonalizados}, ${relevo}, ${remate}, NOW())`);
+                    }
+                });
+
+                if (values.length === 0) {
+                    alert('❌ No se pudo convertir ningún registro válido');
+                    return;
+                }
+
+                sql += values.join(',\n');
+                sql += `\nON CONFLICT (chapa, fecha, jornada) DO UPDATE SET
+  prima_personalizada = EXCLUDED.prima_personalizada,
+  movimientos_personalizados = EXCLUDED.movimientos_personalizados,
+  relevo = EXCLUDED.relevo,
+  remate = EXCLUDED.remate,
+  ultima_actualizacion = EXCLUDED.ultima_actualizacion;`;
+
+                sql += `\n\n-- ============================================\n`;
+                sql += `-- ✅ Total: ${values.length} registros convertidos\n`;
+                const duplicates = data.length - uniqueData.length;
+                if (duplicates > 0) {
+                    sql += `-- ℹ️  ${duplicates} registros duplicados eliminados\n`;
+                }
+                if (skipped > 0) {
+                    sql += `-- ⚠️  ${skipped} registros omitidos (chapa o fecha inválida)\n`;
+                }
+                sql += `-- ============================================\n`;
+
+                document.getElementById('sqlOutput').value = sql;
+
+                let mensaje = `✅ Conversión exitosa!\n\n📊 ${values.length} registros únicos listos para importar`;
+                if (duplicates > 0) {
+                    mensaje += `\nℹ️ ${duplicates} duplicados eliminados (se mantuvo el último)`;
+                }
+                if (skipped > 0) {
+                    mensaje += `\n⚠️ ${skipped} registros omitidos`;
+                }
+                mensaje += `\n\nAhora copia el SQL y pégalo en Supabase SQL Editor`;
+
+                alert(mensaje);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al convertir: ' + error.message);
+            }
+        }
+
+        function copiar() {
+            const sqlOutput = document.getElementById('sqlOutput');
+            if (!sqlOutput.value) {
+                alert('❌ Primero debes convertir el CSV a SQL');
+                return;
+            }
+            sqlOutput.select();
+            document.execCommand('copy');
+            alert('✅ SQL copiado al portapapeles!');
+        }
+    </script>
+</body>
+</html>

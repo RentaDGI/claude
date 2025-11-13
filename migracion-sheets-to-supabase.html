@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migración Google Sheets → Supabase</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 800px;
+      width: 100%;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .config-section {
+      background: #f8f9fa;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .config-section h3 {
+      color: #495057;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #495057;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .log {
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .log.visible {
+      display: block;
+    }
+
+    .log-success {
+      color: #48bb78;
+    }
+
+    .log-error {
+      color: #f56565;
+    }
+
+    .log-info {
+      color: #4299e1;
+    }
+
+    .log-warning {
+      color: #ed8936;
+    }
+
+    .progress {
+      background: #e2e8f0;
+      border-radius: 8px;
+      height: 8px;
+      overflow: hidden;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .progress.visible {
+      display: block;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      border-color: #17a2b8;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🚀 Migración a Supabase</h1>
+  <p class="subtitle">Importa tus datos desde Google Sheets a Supabase PostgreSQL</p>
+
+  <div class="alert alert-info">
+    <strong>⚠️ IMPORTANTE:</strong> Esta herramienta se ejecuta UNA SOLA VEZ para migrar datos existentes. Asegúrate de haber creado las tablas en Supabase ejecutando el script SQL primero.
+  </div>
+
+  <div class="config-section">
+    <h3>📝 Configuración de Supabase</h3>
+
+    <div class="input-group">
+      <label>URL del Proyecto</label>
+      <input type="text" id="supabaseUrl" placeholder="https://xxxxx.supabase.co">
+    </div>
+
+    <div class="input-group">
+      <label>Anon Key (Clave Pública)</label>
+      <input type="text" id="supabaseKey" placeholder="eyJhbGc...">
+    </div>
+  </div>
+
+  <button class="btn" id="startBtn" onclick="iniciarMigracion()">
+    Iniciar Migración
+  </button>
+
+  <div class="progress" id="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<!-- Librerías -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ============================================================================
+// CONFIGURACIÓN
+// ============================================================================
+
+// URLs de Google Sheets (las mismas que sheets.js)
+const SHEETS_URLS = {
+  CENSO: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcJ5Irxl93zwDqehuLW7-MsuVtphRDtmF8Rwp-yueqcAYRfgrTtEdKDwX8WKkJj1m0rVJc8AncGN_A/pub?gid=1216182924&single=true&output=csv',
+  JORNALES: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=1604874350',
+  CONTRATACION: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=1304645770',
+  USUARIOS: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=0', // Ajustar GID
+  CONFIG_USUARIO: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=988244680',
+  PRIMAS: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=1977235036'
+};
+
+let supabase = null;
+let totalSteps = 0;
+let completedSteps = 0;
+
+// ============================================================================
+// UTILIDADES DE LOG
+// ============================================================================
+
+function log(message, type = 'info') {
+  const logEl = document.getElementById('log');
+  logEl.classList.add('visible');
+
+  const timestamp = new Date().toLocaleTimeString();
+  const className = `log-${type}`;
+
+  const line = document.createElement('div');
+  line.className = className;
+  line.textContent = `[${timestamp}] ${message}`;
+
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateProgress() {
+  completedSteps++;
+  const percentage = (completedSteps / totalSteps) * 100;
+
+  const progressEl = document.getElementById('progress');
+  const progressBar = document.getElementById('progressBar');
+
+  progressEl.classList.add('visible');
+  progressBar.style.width = percentage + '%';
+}
+
+// ============================================================================
+// UTILIDADES
+// ============================================================================
+
+/**
+ * Convierte fecha de DD/MM/YYYY a YYYY-MM-DD
+ */
+function convertirFecha(fechaStr) {
+  if (!fechaStr || fechaStr.trim() === '') return null;
+
+  // Si ya está en formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+    return fechaStr;
+  }
+
+  // Si está en formato DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fechaStr)) {
+    const [dia, mes, anio] = fechaStr.split('/');
+    return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+  }
+
+  // Si está en formato D/M/YYYY o DD/M/YYYY
+  const match = fechaStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, dia, mes, anio] = match;
+    return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+  }
+
+  // Intentar parsear como fecha y formatear
+  const fecha = new Date(fechaStr);
+  if (!isNaN(fecha.getTime())) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  return null;
+}
+
+/**
+ * Valida que una fecha sea válida
+ */
+function esFechaValida(fechaStr) {
+  if (!fechaStr) return false;
+  const fecha = new Date(fechaStr);
+  return !isNaN(fecha.getTime());
+}
+
+// ============================================================================
+// PARSEO DE CSV
+// ============================================================================
+
+function parseCSV(csv) {
+  if (!csv || csv.trim() === '') return [];
+
+  const lines = csv.split('\n').filter(line => line.trim() !== '');
+  if (lines.length === 0) return [];
+
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const data = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length === 0) continue;
+
+    const row = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+    data.push(row);
+  }
+
+  return data;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+// ============================================================================
+// MIGRACIÓN DE DATOS
+// ============================================================================
+
+async function fetchSheetData(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const csv = await response.text();
+  return parseCSV(csv);
+}
+
+async function migrarCenso() {
+  log('📊 Migrando Censo...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.CENSO);
+    log(`  → ${data.length} registros encontrados`, 'info');
+
+    // Transformar datos al formato de Supabase
+    const records = data.map(row => {
+      const fechaOriginal = row.fecha || row.Fecha;
+      const fechaConvertida = convertirFecha(fechaOriginal) || new Date().toISOString().split('T')[0];
+
+      return {
+        fecha: fechaConvertida,
+        posicion: parseInt(row.posicion || row.Posicion) || 0,
+        chapa: row.chapa || row.Chapa || '',
+        color: row.color || row.Color || 'green',
+        estado: row.estado || row.Estado || ''
+      };
+    }).filter(r => r.fecha && esFechaValida(r.fecha));
+
+    log(`  → ${records.length} registros válidos`, 'info');
+
+    // Insertar en Supabase (en lotes de 100)
+    const batchSize = 100;
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      const { error } = await supabase.from('censo').upsert(batch, { onConflict: 'fecha,posicion', ignoreDuplicates: true });
+
+      if (error) {
+        log(`  ⚠️ Error en lote ${i / batchSize + 1}: ${error.message}`, 'warning');
+      }
+    }
+
+    log(`  ✅ Censo migrado correctamente`, 'success');
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+async function migrarJornales() {
+  log('💼 Migrando Jornales...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.JORNALES);
+    log(`  → ${data.length} jornales encontrados`, 'info');
+
+    const records = data.map(row => {
+      const fechaOriginal = row.fecha || row.Fecha;
+      const fechaConvertida = convertirFecha(fechaOriginal);
+
+      return {
+        fecha: fechaConvertida,
+        chapa: row.chapa || row.Chapa,
+        puesto: row.puesto || row.Puesto,
+        jornada: row.jornada || row.Jornada,
+        empresa: row.empresa || row.Empresa,
+        buque: row.buque || row.Buque,
+        parte: row.parte || row.Parte,
+        turno: row.turno || row.Turno || null,
+        origen: 'importacion'
+      };
+    }).filter(r => r.fecha && esFechaValida(r.fecha) && r.chapa); // Filtrar registros válidos
+
+    log(`  → ${records.length} registros válidos para insertar`, 'info');
+
+    // Insertar en lotes
+    const batchSize = 100;
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      const { error } = await supabase.from('jornales').insert(batch);
+
+      if (error) {
+        log(`  ⚠️ Error en lote ${i / batchSize + 1}: ${error.message}`, 'warning');
+      } else {
+        log(`  → Insertados ${Math.min(i + batchSize, records.length)}/${records.length}`, 'info');
+      }
+    }
+
+    log(`  ✅ Jornales migrados correctamente`, 'success');
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+async function migrarContrataciones() {
+  log('📋 Migrando Contrataciones...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.CONTRATACION);
+    log(`  → ${data.length} registros encontrados`, 'info');
+
+    // Nota: Esta tabla puede tener estructura variada, se intenta mapear lo mejor posible
+    const records = [];
+
+    data.forEach((row, index) => {
+      // Intentar extraer chapa de cualquier columna
+      let chapa = null;
+      for (const key in row) {
+        const value = row[key];
+        // Si parece un número de chapa (1-4 dígitos)
+        if (value && /^\d{1,4}$/.test(value.toString().trim())) {
+          chapa = value.toString().trim();
+          break;
+        }
+      }
+
+      if (chapa) {
+        const fechaOriginal = row.fecha || row.Fecha;
+        const fechaConvertida = convertirFecha(fechaOriginal) || new Date().toISOString().split('T')[0];
+
+        records.push({
+          fecha: fechaConvertida,
+          turno: row.turno || row.Turno || 'mañana',
+          slot: parseInt(row.slot || row.Slot) || index + 1,
+          chapa: chapa,
+          puesto: row.puesto || row.Puesto || '',
+          empresa: row.empresa || row.Empresa || '',
+          estado: row.estado || row.Estado || 'confirmado'
+        });
+      }
+    });
+
+    log(`  → ${records.length} registros válidos`, 'info');
+
+    if (records.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < records.length; i += batchSize) {
+        const batch = records.slice(i, i + batchSize);
+        const { error } = await supabase.from('contrataciones').upsert(batch, {
+          onConflict: 'fecha,turno,slot',
+          ignoreDuplicates: true
+        });
+
+        if (error) {
+          log(`  ⚠️ Error: ${error.message}`, 'warning');
+        }
+      }
+    }
+
+    log(`  ✅ Contrataciones migradas`, 'success');
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+async function migrarUsuarios() {
+  log('👤 Migrando Usuarios...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.USUARIOS);
+    log(`  → ${data.length} usuarios encontrados`, 'info');
+
+    const records = data.map(row => ({
+      chapa: row.chapa || row.Chapa,
+      nombre: row.nombre || row.Nombre,
+      email: row.email || row.Email,
+      password_hash: row.password || row.contraseña || row.Password, // TEMPORAL
+      posicion: row.posicion || row.Posicion,
+      activo: true
+    })).filter(r => r.chapa);
+
+    log(`  → ${records.length} usuarios válidos`, 'info');
+
+    const { error } = await supabase.from('usuarios').upsert(records, { onConflict: 'chapa' });
+
+    if (error) {
+      log(`  ❌ Error: ${error.message}`, 'error');
+    } else {
+      log(`  ✅ Usuarios migrados`, 'success');
+    }
+
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+async function migrarConfiguracion() {
+  log('⚙️ Migrando Configuración de Usuarios...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.CONFIG_USUARIO);
+    log(`  → ${data.length} configuraciones encontradas`, 'info');
+
+    // Agrupar por chapa para eliminar duplicados
+    const configMap = new Map();
+
+    data.forEach(row => {
+      const chapa = row.chapa || row.Chapa;
+      if (chapa) {
+        const irpf = parseFloat(row.irpf || row.IRPF || 2.00);
+        // Solo guardar si no existe o si tiene un IRPF válido
+        if (!configMap.has(chapa) || irpf !== 2.00) {
+          configMap.set(chapa, { chapa, irpf });
+        }
+      }
+    });
+
+    const records = Array.from(configMap.values());
+    log(`  → ${records.length} configuraciones únicas`, 'info');
+
+    const { error } = await supabase.from('configuracion_usuario').upsert(records, {
+      onConflict: 'chapa',
+      ignoreDuplicates: false
+    });
+
+    if (error) {
+      log(`  ❌ Error: ${error.message}`, 'error');
+    } else {
+      log(`  ✅ Configuración migrada`, 'success');
+    }
+
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+async function migrarPrimas() {
+  log('💰 Migrando Primas Personalizadas...', 'info');
+
+  try {
+    const data = await fetchSheetData(SHEETS_URLS.PRIMAS);
+    log(`  → ${data.length} primas encontradas`, 'info');
+
+    // Agrupar por chapa+fecha+concepto para eliminar duplicados
+    const primasMap = new Map();
+
+    data.forEach(row => {
+      const chapa = row.chapa || row.Chapa;
+      const fechaOriginal = row.fecha || row.Fecha;
+      const fecha = convertirFecha(fechaOriginal);
+      const concepto = (row.concepto || row.Concepto || 'prima').toLowerCase();
+
+      if (chapa && fecha && esFechaValida(fecha)) {
+        const key = `${chapa}-${fecha}-${concepto}`;
+        const cantidad = parseFloat(row.cantidad || row.Cantidad || 0);
+
+        // Guardar solo si no existe o si tiene mayor cantidad
+        if (!primasMap.has(key) || primasMap.get(key).cantidad < cantidad) {
+          primasMap.set(key, {
+            chapa,
+            fecha,
+            concepto,
+            cantidad,
+            descripcion: row.descripcion || row.Descripcion || ''
+          });
+        }
+      }
+    });
+
+    const records = Array.from(primasMap.values());
+    log(`  → ${records.length} primas únicas válidas`, 'info');
+
+    if (records.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < records.length; i += batchSize) {
+        const batch = records.slice(i, i + batchSize);
+        const { error } = await supabase.from('primas_personalizadas').upsert(batch, {
+          onConflict: 'chapa,fecha,concepto',
+          ignoreDuplicates: false
+        });
+
+        if (error) {
+          log(`  ⚠️ Error: ${error.message}`, 'warning');
+        }
+      }
+    }
+
+    log(`  ✅ Primas migradas`, 'success');
+    updateProgress();
+
+  } catch (error) {
+    log(`  ❌ Error: ${error.message}`, 'error');
+    updateProgress();
+  }
+}
+
+// ============================================================================
+// PROCESO PRINCIPAL
+// ============================================================================
+
+async function iniciarMigracion() {
+  const url = document.getElementById('supabaseUrl').value.trim();
+  const key = document.getElementById('supabaseKey').value.trim();
+
+  if (!url || !key) {
+    alert('Por favor, completa todos los campos de configuración');
+    return;
+  }
+
+  // Inicializar Supabase
+  supabase = window.supabase.createClient(url, key);
+
+  // Deshabilitar botón
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = 'Migrando...';
+
+  // Limpiar log
+  document.getElementById('log').innerHTML = '';
+
+  log('🚀 Iniciando migración...', 'info');
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+
+  // Definir pasos
+  totalSteps = 6;
+  completedSteps = 0;
+
+  // Ejecutar migraciones
+  await migrarUsuarios();
+  await migrarConfiguracion();
+  await migrarJornales();
+  await migrarCenso();
+  await migrarContrataciones();
+  await migrarPrimas();
+
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'success');
+  log('🎉 ¡Migración completada!', 'success');
+  log('', 'info');
+  log('Próximos pasos:', 'info');
+  log('1. Verifica los datos en Supabase Dashboard', 'info');
+  log('2. Actualiza index.html para usar supabase.js', 'info');
+  log('3. Configura SUPABASE_CONFIG en supabase.js', 'info');
+
+  document.getElementById('startBtn').textContent = 'Migración Completa ✓';
+}
+
+</script>
+
+</body>
+</html>

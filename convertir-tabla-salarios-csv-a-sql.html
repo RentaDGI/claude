@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertir Tabla Salarios CSV a SQL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .instrucciones {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .instrucciones h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .instrucciones ol {
+            margin-left: 20px;
+            color: #555;
+            font-size: 14px;
+        }
+        .instrucciones li {
+            margin-bottom: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #csvInput {
+            min-height: 200px;
+        }
+        #sqlOutput {
+            min-height: 300px;
+            background-color: #f8f9fa;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 10px 20px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .estructura {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Convertir Tabla Salarios CSV a SQL</h1>
+        <p class="subtitle">Conversor de CSV de Google Sheets a SQL INSERT para Supabase</p>
+
+        <div class="instrucciones">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>En Google Sheets, selecciona TODAS las celdas de la pestaña "tabla_salarios" (incluye los encabezados)</li>
+                <li>Copia (Ctrl+C)</li>
+                <li>Pega aquí abajo</li>
+                <li>Haz clic en "Convertir a SQL"</li>
+                <li>Copia el SQL generado y pégalo en Supabase SQL Editor</li>
+            </ol>
+        </div>
+
+        <div class="estructura">
+            <strong>Estructura esperada:</strong> Clave_Jornada, Jornada, Tipo_Dia, Jornal_Base_G1, Jornal_Base_G2, Coef_Prima_Menor120, Coef_Prima_Mayor120, Prima_Minima_Coches
+        </div>
+
+        <label for="csvInput">Pega aquí el CSV copiado de Google Sheets:</label>
+        <textarea id="csvInput" placeholder="Clave_Jornada	Jornada	Tipo_Dia	Jornal_Base_G1	Jornal_Base_G2	Coef_Prima_Menor120	Coef_Prima_Mayor120	Prima_Minima_Coches
+08-14_LABORABLE	08-14	LABORABLE	130,18	134,76	0,374	0,612	60,310"></textarea>
+
+        <button onclick="convertir()">🔄 Convertir a SQL</button>
+        <button onclick="copiar()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📋 Copiar SQL</button>
+
+        <label for="sqlOutput">SQL generado (copia y pega en Supabase):</label>
+        <textarea id="sqlOutput" readonly></textarea>
+
+        <div class="info">
+            ⚠️ <strong>Importante:</strong> Antes de ejecutar el SQL, asegúrate de haber ejecutado primero el archivo <code>fix-tablas-estructura-correcta.sql</code> en Supabase para crear la tabla con la estructura correcta.
+        </div>
+    </div>
+
+    <script>
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const data = [];
+
+            // Detectar separador (coma o tabulador)
+            const separator = lines[0].includes('\t') ? '\t' : ',';
+
+            const headers = lines[0].split(separator).map(h => h.trim());
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(separator);
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+
+            return data;
+        }
+
+        function parseDecimalEspanol(value) {
+            if (!value || value.trim() === '') return 'NULL';
+            // Reemplazar coma por punto para formato SQL
+            const parsed = parseFloat(String(value).replace(',', '.'));
+            return isNaN(parsed) ? 'NULL' : parsed;
+        }
+
+        function escapeSql(value) {
+            if (value === null || value === undefined || value === '') return 'NULL';
+            return "'" + String(value).replace(/'/g, "''") + "'";
+        }
+
+        function convertir() {
+            const csv = document.getElementById('csvInput').value.trim();
+
+            if (!csv) {
+                alert('❌ Por favor, pega el CSV de Google Sheets primero');
+                return;
+            }
+
+            try {
+                const data = parseCSV(csv);
+
+                if (data.length === 0) {
+                    alert('❌ No se encontraron datos para convertir');
+                    return;
+                }
+
+                let sql = `-- ============================================\n`;
+                sql += `-- Importación de Tabla Salarios (${data.length} registros)\n`;
+                sql += `-- ============================================\n\n`;
+                sql += `INSERT INTO tabla_salarios (clave_jornada, jornada, tipo_dia, jornal_base_g1, jornal_base_g2, coef_prima_menor120, coef_prima_mayor120, prima_minima_coches) VALUES\n`;
+
+                const values = [];
+                let skipped = 0;
+
+                data.forEach((row, index) => {
+                    const claveJornada = row.Clave_Jornada;
+
+                    if (!claveJornada) {
+                        skipped++;
+                        console.warn(`Fila ${index + 2} omitida: clave_jornada vacía`);
+                        return;
+                    }
+
+                    const jornada = escapeSql(row.Jornada);
+                    const tipoDia = escapeSql(row.Tipo_Dia);
+                    const jornalBaseG1 = parseDecimalEspanol(row.Jornal_Base_G1);
+                    const jornalBaseG2 = parseDecimalEspanol(row.Jornal_Base_G2);
+                    const coefPrimaMenor120 = parseDecimalEspanol(row.Coef_Prima_Menor120);
+                    const coefPrimaMayor120 = parseDecimalEspanol(row.Coef_Prima_Mayor120);
+                    const primaMinimaCoches = parseDecimalEspanol(row.Prima_Minima_Coches);
+
+                    values.push(`  (${escapeSql(claveJornada)}, ${jornada}, ${tipoDia}, ${jornalBaseG1}, ${jornalBaseG2}, ${coefPrimaMenor120}, ${coefPrimaMayor120}, ${primaMinimaCoches})`);
+                });
+
+                if (values.length === 0) {
+                    alert('❌ No se pudo convertir ningún registro válido');
+                    return;
+                }
+
+                sql += values.join(',\n');
+                sql += `\nON CONFLICT (clave_jornada) DO UPDATE SET
+  jornada = EXCLUDED.jornada,
+  tipo_dia = EXCLUDED.tipo_dia,
+  jornal_base_g1 = EXCLUDED.jornal_base_g1,
+  jornal_base_g2 = EXCLUDED.jornal_base_g2,
+  coef_prima_menor120 = EXCLUDED.coef_prima_menor120,
+  coef_prima_mayor120 = EXCLUDED.coef_prima_mayor120,
+  prima_minima_coches = EXCLUDED.prima_minima_coches,
+  updated_at = NOW();`;
+
+                sql += `\n\n-- ============================================\n`;
+                sql += `-- ✅ Total: ${values.length} registros convertidos\n`;
+                if (skipped > 0) {
+                    sql += `-- ⚠️  ${skipped} registros omitidos (clave_jornada vacía)\n`;
+                }
+                sql += `-- ============================================\n`;
+
+                document.getElementById('sqlOutput').value = sql;
+
+                alert(`✅ Conversión exitosa!\n\n📊 ${values.length} registros listos para importar\n${skipped > 0 ? '⚠️ ' + skipped + ' registros omitidos' : ''}\n\nAhora copia el SQL y pégalo en Supabase SQL Editor`);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al convertir: ' + error.message);
+            }
+        }
+
+        function copiar() {
+            const sqlOutput = document.getElementById('sqlOutput');
+            if (!sqlOutput.value) {
+                alert('❌ Primero debes convertir el CSV a SQL');
+                return;
+            }
+            sqlOutput.select();
+            document.execCommand('copy');
+            alert('✅ SQL copiado al portapapeles!');
+        }
+    </script>
+</body>
+</html>

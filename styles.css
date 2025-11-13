@@ -1,4 +1,4 @@
-/* Variables de colores del puerto */
+
 :root {
   --puerto-blue: #0a2e5c;
   --puerto-blue-light: #1e4a8a;
@@ -24,7 +24,7 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Reset y base */
+
 * {
   margin: 0;
   padding: 0;
@@ -39,7 +39,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Fondo decorativo del puerto */
+
 body::before {
   content: '';
   position: fixed;
@@ -54,7 +54,7 @@ body::before {
   z-index: 0;
 }
 
-/* Header */
+
 .header-main {
   position: fixed;
   top: 0;
@@ -171,7 +171,7 @@ body::before {
   box-shadow: var(--shadow-md);
 }
 
-/* Sidebar */
+
 .sidebar {
   position: fixed;
   top: var(--header-height);
@@ -230,7 +230,7 @@ body::before {
   flex-shrink: 0;
 }
 
-/* Sidebar overlay para móvil */
+
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -244,7 +244,7 @@ body::before {
   display: block;
 }
 
-/* Main content */
+
 .main-content {
   margin-left: var(--sidebar-width);
   margin-top: var(--header-height);
@@ -259,7 +259,7 @@ body::before {
   padding: 2rem 1.5rem;
 }
 
-/* Páginas */
+
 .page {
   display: none;
   animation: fadeIn 0.4s ease;
@@ -280,7 +280,7 @@ body::before {
   }
 }
 
-/* Page Hero */
+
 .page-hero {
   position: relative;
   width: 100%;
@@ -338,7 +338,7 @@ body::before {
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Login Page */
+
 .login-container {
   min-height: calc(100vh - var(--header-height));
   display: flex;
@@ -439,7 +439,7 @@ body::before {
   display: block;
 }
 
-/* Buttons */
+
 .btn-primary {
   background: linear-gradient(135deg, var(--puerto-teal) 0%, var(--puerto-blue) 100%);
   color: white;
@@ -471,7 +471,7 @@ body::before {
   font-size: 1rem;
 }
 
-/* Welcome Card */
+
 .welcome-card {
   background: linear-gradient(135deg, var(--puerto-blue) 0%, var(--puerto-teal) 100%);
   border-radius: 16px;
@@ -493,7 +493,7 @@ body::before {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Dashboard Grid */
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -562,7 +562,7 @@ body::before {
   margin-top: auto;
 }
 
-/* Loading State */
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -590,7 +590,7 @@ body::before {
   font-size: 0.95rem;
 }
 
-/* Data Table */
+
 .data-table {
   background: white;
   border-radius: 12px;
@@ -633,7 +633,7 @@ body::before {
   border-bottom: none;
 }
 
-/* Empty State */
+
 .empty-state {
   background: white;
   border-radius: 12px;
@@ -662,7 +662,7 @@ body::before {
   font-size: 0.95rem;
 }
 
-/* Stats Grid */
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -696,7 +696,7 @@ body::before {
 .stat-card.orange { border-left-color: var(--puerto-orange); }
 .stat-card.yellow { border-left-color: var(--puerto-yellow); }
 
-/* Puertas Grid */
+
 .puertas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -745,7 +745,7 @@ body::before {
   font-weight: 600;
 }
 
-/* Nuevos estilos para puertas SP y OC */
+
 .puerta-detalles {
   display: flex;
   flex-direction: column;
@@ -776,7 +776,7 @@ body::before {
   color: var(--puerto-blue);
 }
 
-/* Censo Legend */
+
 .censo-legend {
   display: flex;
   flex-wrap: wrap;
@@ -812,7 +812,7 @@ body::before {
 .censo-legend-color.orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
 .censo-legend-color.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 
-/* Censo Grid - Optimizado para 535 chapas */
+
 .censo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
@@ -847,7 +847,7 @@ body::before {
 .censo-item.orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
 .censo-item.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 
-/* Puertas Section Titles */
+
 .puertas-section-title {
   font-size: 1.25rem;
   font-weight: 700;
@@ -862,7 +862,7 @@ body::before {
   border-width: 3px;
 }
 
-/* Responsive adjustments for censo */
+
 @media (max-width: 1200px) {
   .censo-grid {
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -896,7 +896,7 @@ body::before {
   }
 }
 
-/* Enlaces */
+
 .enlaces-section {
   margin-bottom: 2.5rem;
 }
@@ -943,7 +943,7 @@ body::before {
 .enlace-btn.green { border-color: #10b981; color: #065f46; background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%); }
 .enlace-btn.gray { border-color: #6b7280; color: #374151; background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%); }
 
-/* Noticias */
+
 .noticia-card {
   background: white;
   border-radius: 12px;
@@ -985,7 +985,7 @@ body::before {
   font-size: 0.95rem;
 }
 
-/* Foro */
+
 .foro-container {
   padding-bottom: 160px !important;
 }
@@ -1073,9 +1073,9 @@ body::before {
   color: white;
 }
 
-/* Foro: estilos toolbar y search removidos para ahorrar espacio */
 
-/* Foro Composer */
+
+
 .foro-composer {
   position: fixed;
   bottom: 0;
@@ -1135,7 +1135,7 @@ body::before {
   box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
-/* Botón scroll hacia abajo */
+
 .scroll-to-bottom-btn {
   position: fixed;
   bottom: 180px;
@@ -1181,7 +1181,7 @@ body::before {
   }
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -1257,7 +1257,7 @@ body::before {
   }
 }
 
-/* Utilidades */
+
 .hidden {
   display: none !important;
 }
@@ -1269,7 +1269,7 @@ body::before {
 .mt-4 { margin-top: 1rem; }
 .mb-4 { margin-bottom: 1rem; }
 
-/* Scrollbar personalizada */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -1288,7 +1288,7 @@ body::before {
   background: var(--puerto-blue);
 }
 
-/* Progress bar para jornales */
+
 .progress-bar {
   width: 100%;
   height: 8px;
@@ -1305,7 +1305,7 @@ body::before {
   transition: width 0.5s ease;
 }
 
-/* Settings button */
+
 .settings-btn {
   background: transparent;
   border: none;
@@ -1325,7 +1325,7 @@ body::before {
   color: var(--puerto-blue);
 }
 
-/* Modal overlay */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1436,7 +1436,7 @@ body::before {
   color: white;
 }
 
-/* Botón de instalación PWA flotante */
+
 .install-pwa-btn {
   position: fixed;
   bottom: 20px;
@@ -1493,7 +1493,7 @@ body::before {
   }
 }
 
-/* Responsive: más pequeño en móvil */
+
 @media (max-width: 768px) {
   .install-pwa-btn {
     bottom: 15px;
@@ -1503,7 +1503,7 @@ body::before {
   }
 }
 
-/* ===== SUELDÓMETRO ===== */
+
 
 .quincena-card {
   background: white;
@@ -1557,7 +1557,7 @@ body::before {
   border-radius: 8px;
 }
 
-/* Estilos para valores bruto y neto */
+
 .bruto-value {
   color: var(--puerto-orange);
 }
@@ -1639,7 +1639,7 @@ body::before {
   background: #f8fafc;
 }
 
-/* Badges para jornadas en tabla */
+
 .badge {
   display: inline-block;
   padding: 0.25rem 0.625rem;
@@ -1674,7 +1674,7 @@ body::before {
   color: #9f1239;
 }
 
-/* Badge OC y SP */
+
 .badge-oc {
   display: inline-block;
   padding: 0.125rem 0.375rem;
@@ -1686,11 +1686,11 @@ body::before {
   margin-left: 0.25rem;
   vertical-align: middle;
 }
-/* Badge Verde (para SP o éxito) */
+
 .badge-green {
   display: inline-block;
   padding: 0.125rem 0.375rem;
-  background: #10b981; /* Color verde de tu paleta */
+  background: #10b981; 
   color: white;
   border-radius: 4px;
   font-size: 0.6875rem;
@@ -1711,7 +1711,7 @@ body::before {
   vertical-align: middle;
 }
 
-/* Inputs de movimientos y prima */
+
 .movimientos-input,
 .prima-input {
   width: 80px;
@@ -1746,7 +1746,7 @@ body::before {
   font-size: 0.875rem;
 }
 
-/* Control de IRPF */
+
 .irpf-control {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   border: 2px solid var(--puerto-orange);
@@ -1807,7 +1807,7 @@ body::before {
   font-style: italic;
 }
 
-/* Botón flotante circular (FAB - Floating Action Button) */
+
 .fab-add-jornal {
   position: fixed;
   bottom: 2rem;
@@ -1830,7 +1830,7 @@ body::before {
   transform: scale(0);
 }
 
-/* Mostrar FAB solo en página de jornales */
+
 #page-jornales.active .fab-add-jornal {
   opacity: 1;
   visibility: visible;
@@ -1853,7 +1853,7 @@ body::before {
   box-shadow: 0 2px 8px rgba(10, 46, 92, 0.3);
 }
 
-/* Responsive para móvil */
+
 @media (max-width: 768px) {
   .fab-add-jornal {
     width: 56px;
@@ -1868,7 +1868,7 @@ body::before {
   }
 }
 
-/* Botones de candado */
+
 .lock-btn {
   background: transparent;
   border: none;
@@ -1894,7 +1894,7 @@ body::before {
   transform: scale(0.95);
 }
 
-/* Animación de actualización */
+
 @keyframes highlight {
   0%, 100% {
     background-color: transparent;
@@ -1908,7 +1908,7 @@ body::before {
   animation: highlight 0.6s ease-in-out;
 }
 
-/* Responsive table */
+
 @media (max-width: 768px) {
   .jornales-table {
     padding: 0.5rem;
@@ -1951,16 +1951,16 @@ body::before {
     padding: 1rem;
   }
 
-  /* Inputs más grandes para táctil */
+  
   .movimientos-input,
   .prima-input {
     width: 70px;
     padding: 0.5rem;
     font-size: 0.875rem;
-    min-height: 44px; /* Recomendación Apple para táctil */
+    min-height: 44px; 
   }
 
-  /* Control IRPF responsive */
+  
   .irpf-control {
     padding: 1rem;
   }
@@ -1982,21 +1982,21 @@ body::before {
     min-height: 44px;
   }
 
-  /* Badges más legibles */
+  
   .badge {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
 
   }
 
-  /* Valores bruto/neto más visibles */
+  
   .bruto-value strong,
   .neto-value strong {
     font-size: 0.9375rem;
   }
 }
 
-/* Móviles pequeños */
+
 @media (max-width: 480px) {
   .quincena-card {
     margin-bottom: 1rem;
@@ -2035,7 +2035,7 @@ body::before {
   }
 }
 
-/* Botón flotante (FAB) para añadir jornal */
+
 .fab-btn {
   position: fixed;
   bottom: 2rem;
@@ -2048,7 +2048,7 @@ body::before {
   border: none;
   box-shadow: 0 4px 12px rgba(10, 46, 92, 0.4);
   cursor: pointer;
-  display: none; /* Oculto por defecto */
+  display: none; 
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
@@ -2069,12 +2069,12 @@ body::before {
   height: 24px;
 }
 
-/* Mostrar FAB solo en la página de jornales */
+
 #page-jornales.active .fab-btn {
   display: flex;
 }
 
-/* Badge para jornales manuales */
+
 .badge-manual {
   display: inline-block;
   padding: 0.125rem 0.375rem;
@@ -2087,7 +2087,7 @@ body::before {
   vertical-align: middle;
 }
 
-/* Mejorar estilos del modal para formularios largos */
+
 .modal-body {
   max-height: 70vh;
   overflow-y: auto;
@@ -2130,7 +2130,7 @@ body::before {
   cursor: pointer;
 }
 
-/* Responsive FAB */
+
 @media (max-width: 768px) {
   .fab-btn {
     width: 48px;
@@ -2145,9 +2145,7 @@ body::before {
   }
 }
 
-/* ========================================
-   MODAL - CHAPAS DEL PARTE
-   ======================================== */
+
 
 .modal-overlay {
   position: fixed;
@@ -2258,7 +2256,7 @@ body::before {
   flex: 1;
 }
 
-/* Grupos de puestos en el modal */
+
 .puesto-group {
   margin-bottom: 2rem;
   animation: fadeInUp 0.4s ease-out;
@@ -2346,7 +2344,7 @@ body::before {
   letter-spacing: 0.5px;
 }
 
-/* Estado vacío en modal */
+
 .modal-empty-state {
   text-align: center;
   padding: 3rem 1rem;
@@ -2365,7 +2363,7 @@ body::before {
   margin-bottom: 0.5rem;
 }
 
-/* Responsive modal */
+
 @media (max-width: 768px) {
   .modal-container {
     max-width: 100%;
@@ -2410,7 +2408,7 @@ body::before {
   }
 }
 
-/* Cursor pointer para las tarjetas de contratación */
+
 .contratacion-card {
   cursor: pointer;
   user-select: none;
@@ -2420,9 +2418,7 @@ body::before {
   transform: translateY(-2px) scale(0.98) !important;
 }
 
-/* ========================================
-   RESUMEN DEL MODAL - DESGLOSE POR PUESTO
-   ======================================== */
+
 
 .modal-resumen-container {
   margin-top: 2.5rem;
@@ -2515,7 +2511,7 @@ body::before {
   border-top: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Responsive para resumen */
+
 @media (max-width: 768px) {
   .modal-resumen-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

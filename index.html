@@ -282,6 +282,13 @@
         <div id="jornales-content"></div>
       </div>
 
+      <!-- Botón flotante para sincronizar desde CSV -->
+      <button id="sync-jornales-btn" class="fab-sync-jornal" title="Sincronizar desde CSV">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+
       <!-- Botón flotante para añadir jornal -->
       <button id="add-jornal-btn" class="fab-add-jornal" title="Añadir jornal manualmente">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -581,72 +588,38 @@
     </div>
   </div>
 
-  <!-- Modal para reportar jornal faltante -->
+  <!-- Modal para reportar bugs -->
   <div id="report-jornal-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>📧 Reportar Jornal Faltante</h3>
+        <h3>🐛 Reportar Bug o Problema</h3>
         <button id="close-report-modal" class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
         <p style="margin-bottom: 1rem; color: var(--puerto-dark-blue); font-size: 0.875rem;">
-          Si algún jornal no se ha cargado correctamente, completa este formulario. Los datos se enviarán en formato tabular para facilitar la corrección.
+          Ayúdanos a mejorar la aplicación reportando cualquier error o problema que encuentres.
         </p>
-        <div class="form-group">
-          <label for="report-fecha">Fecha *</label>
-          <input type="date" id="report-fecha" required>
-        </div>
         <div class="form-group">
           <label for="report-chapa">Chapa *</label>
           <input type="number" id="report-chapa" placeholder="Tu número de chapa" required readonly>
         </div>
         <div class="form-group">
-          <label for="report-puesto">Puesto Contratación *</label>
-          <select id="report-puesto" required>
-            <option value="">Selecciona un puesto</option>
-            <option value="Especialista">Especialista</option>
-            <option value="Conductor de 1a">Conductor de 1a</option>
-            <option value="Conductor de 2a">Conductor de 2a</option>
-            <option value="Conductor de Coches">Conductor de Coches</option>
-            <option value="Trincador">Trincador</option>
-            <option value="Trincador de Coches">Trincador de Coches</option>
-            <option value="otro">Otro (especificar)</option>
-          </select>
-        </div>
-        <div class="form-group" id="report-puesto-otro-group" style="display: none;">
-          <label for="report-puesto-otro">Especifica el puesto</label>
-          <input type="text" id="report-puesto-otro" placeholder="Ej: Gruista">
-        </div>
-        <div class="form-group">
-          <label for="report-jornada">Jornada *</label>
-          <select id="report-jornada" required>
-            <option value="">Selecciona una jornada</option>
-            <option value="02 a 08">02 a 08</option>
-            <option value="08 a 14">08 a 14</option>
-            <option value="14 a 20">14 a 20</option>
-            <option value="20 a 02">20 a 02</option>
-            <option value="Festivo">Festivo</option>
+          <label for="report-tipo">Tipo de problema *</label>
+          <select id="report-tipo" required>
+            <option value="">Selecciona el tipo de problema</option>
+            <option value="Error de carga">Error de carga de datos</option>
+            <option value="Error visual">Error visual / diseño</option>
+            <option value="Funcionalidad">Problema con funcionalidad</option>
+            <option value="Performance">Lentitud / Performance</option>
+            <option value="Login">Problema con login/contraseña</option>
+            <option value="Datos incorrectos">Datos incorrectos mostrados</option>
+            <option value="Sugerencia">Sugerencia de mejora</option>
+            <option value="Otro">Otro</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="report-empresa">Empresa *</label>
-          <select id="report-empresa" required>
-            <option value="">Selecciona una empresa</option>
-            <option value="MSC">MSC</option>
-            <option value="APM">APM</option>
-            <option value="CSP">CSP</option>
-            <option value="VTEU">VTEU</option>
-            <option value="TRASMED">TRASMED</option>
-            <option value="ERH">ERH</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="report-buque">Buque</label>
-          <input type="text" id="report-buque" placeholder="Ej: MSC SARA (opcional)">
-        </div>
-        <div class="form-group">
-          <label for="report-parte">Parte *</label>
-          <input type="number" id="report-parte" placeholder="Ej: 1" min="1" value="1" required>
+          <label for="report-descripcion">Descripción del problema *</label>
+          <textarea id="report-descripcion" rows="5" placeholder="Describe detalladamente el problema que encontraste..." required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;"></textarea>
         </div>
         <p id="report-error" class="error-message"></p>
         <p id="report-success" class="success-message"></p>
@@ -670,8 +643,15 @@
   <!-- jsPDF para exportar a PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="sheets.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+
+  <!-- Supabase Library (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Data Layer: Usa supabase.js para base de datos PostgreSQL -->
+  <!-- NOTA: Para volver a Google Sheets, reemplaza supabase.js con sheets.js -->
+  <script src="supabase.js?v=22"></script>
+
+  <script src="app.js?v=22"></script>
 
   <!-- PWA Service Worker Registration -->
   <script>
@@ -703,13 +683,14 @@
             console.warn('❌ Error registrando Service Worker:', error);
           });
 
-        // Detectar cuando el Service Worker se actualiza
+        // Detectar cuando el Service Worker se actualiza (solo después de confirmación del usuario)
         let refreshing;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (refreshing) return;
           refreshing = true;
           console.log('🔄 Service Worker actualizado, recargando...');
-          window.location.reload();
+          // Solo recargar si el usuario ya confirmó (se llamó a SKIP_WAITING)
+          // No recargar automáticamente sin confirmación
         });
       });
     }
@@ -739,13 +720,16 @@
         // Verificar inmediatamente
         checkAndShowButton();
 
-        // Verificar cada vez que cambie la página
-        const observer = new MutationObserver(checkAndShowButton);
-        observer.observe(document.getElementById('app'), {
-          attributes: true,
-          subtree: true,
-          attributeFilter: ['class']
-        });
+        // Verificar cada vez que cambie la página (solo si existe el elemento)
+        const appElement = document.getElementById('app');
+        if (appElement) {
+          const observer = new MutationObserver(checkAndShowButton);
+          observer.observe(appElement, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['class']
+          });
+        }
       }
     });
 
@@ -793,3 +777,4 @@
   </script>
 </body>
 </html>
+
