@@ -11,7 +11,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const URLS = {
   // CSV públicos de la empresa
   jornales: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTtbkA94xqjf81lsR7bLKKtyES2YBDKs8J2T4UrSEan7e5Z_eaptShCA78R1wqUyYyASJxmHj3gDnY/pub?gid=1388412839&single=true&output=csv',
-  censo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrMuapybwZUEGPR1vsP9p1_nlWvznyl0sPD4xWsNJ7HdXCj1ABY1EpU1um538HHZQyJtoAe5Niwrxq/pub?gid=841547354&single=true&output=csv',
+  // Censo limpio (formato procesado: posicion,chapa,color) - misma URL que usa la PWA
+  censo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcJ5Irxl93zwDqehuLW7-MsuVtphRDtmF8Rwp-yueqcAYRfgrTtEdKDwX8WKkJj1m0rVJc8AncGN_A/pub?gid=1216182924&single=true&output=csv',
 
   // Google Sheets privados (temporalmente hasta migración completa)
   irpf: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=988244680',
@@ -702,9 +703,10 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
 
     const csvText = await fetchConReintentos(URLS.censo)
     console.log(`✅ CSV descargado: ${csvText.length} caracteres`)
+    console.log(`📄 Primeras 500 chars: ${csvText.substring(0, 500)}`)
 
     const { headers, rows } = parseCSV(csvText)
-    console.log(`📊 Headers del censo: ${headers.join(', ')}`)
+    console.log(`📊 Headers del censo (${headers.length}): ${headers.join(', ')}`)
     console.log(`📋 Filas del censo: ${rows.length}`)
 
     if (rows.length === 0) {
@@ -720,8 +722,27 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       '0': 'red'
     }
 
-    // El CSV tiene formato: posicion,chapa,color
-    // donde color es un número: 4=verde, 3=azul, 2=amarillo, 1=naranja, 0=rojo
+    // El CSV debe tener formato: posicion,chapa,color
+    // Detectar índices de columnas
+    const indices: Record<string, number> = {}
+    headers.forEach((header, idx) => {
+      const h = header.toLowerCase().trim()
+      if (h === 'posicion' || h === 'position' || h === 'pos') {
+        indices['posicion'] = idx
+      } else if (h === 'chapa') {
+        indices['chapa'] = idx
+      } else if (h === 'color') {
+        indices['color'] = idx
+      }
+    })
+
+    // Si no se encontraron headers, asumir orden: posicion, chapa, color
+    if (!indices['posicion']) indices['posicion'] = 0
+    if (!indices['chapa']) indices['chapa'] = 1
+    if (!indices['color']) indices['color'] = 2
+
+    console.log(`🗺️ Índices detectados:`, indices)
+
     const censoData = []
     let filasIgnoradas = 0
 
@@ -731,9 +752,9 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
         continue
       }
 
-      const posicion = values[0]?.trim()
-      const chapa = values[1]?.trim()
-      const colorNum = values[2]?.trim()
+      const posicion = values[indices['posicion']]?.trim()
+      const chapa = values[indices['chapa']]?.trim()
+      const colorNum = values[indices['color']]?.trim()
 
       // Validar que posición y chapa sean números
       const posicionNum = parseInt(posicion)
@@ -750,36 +771,12 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       }
 
       // Convertir color numérico a nombre
-      const colorNombre = colorMap[colorNum] || 'unknown'
-
-      // Estado descriptivo basado en el color
-      let estado = ''
-      switch (colorNombre) {
-        case 'green':
-          estado = 'Disponible'
-          break
-        case 'blue':
-          estado = 'En trabajo'
-          break
-        case 'yellow':
-          estado = 'Alerta'
-          break
-        case 'orange':
-          estado = 'Precaución'
-          break
-        case 'red':
-          estado = 'No disponible'
-          break
-        default:
-          estado = 'Desconocido'
-      }
+      const colorNombre = colorMap[colorNum] || 'green'
 
       censoData.push({
-        fecha: new Date().toISOString().split('T')[0], // Fecha actual (YYYY-MM-DD)
         posicion: posicionNum,
         chapa: chapa,
-        color: colorNombre,
-        estado: estado
+        color: colorNombre
       })
     }
 
@@ -787,10 +784,21 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
     console.log(`⚠️ ${filasIgnoradas} filas ignoradas (datos inválidos)`)
 
     if (censoData.length > 0) {
-      console.log(`📦 Ejemplo de censo:`, JSON.stringify(censoData[0], null, 2))
+      console.log(`📦 Primeros 3 ejemplos de censo:`, JSON.stringify(censoData.slice(0, 3), null, 2))
     }
 
-    // Insertar usando upsert por (fecha, posicion)
+    // Primero, eliminar todos los registros existentes
+    console.log('🗑️ Limpiando censo anterior...')
+    const { error: deleteError } = await supabase
+      .from('censo')
+      .delete()
+      .neq('id', 0) // Eliminar todos
+
+    if (deleteError) {
+      console.warn(`⚠️ Error limpiando censo anterior:`, deleteError)
+    }
+
+    // Insertar nuevos registros
     let insertados = 0
     let errores = 0
 
@@ -802,16 +810,14 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       try {
         const { data, error } = await supabase
           .from('censo')
-          .upsert(batch, {
-            onConflict: 'fecha,posicion',
-            ignoreDuplicates: false  // Actualiza si existe
-          })
+          .insert(batch)
           .select()
 
         if (error) {
           console.error(`❌ Error en lote ${i}-${i + batch.length}:`, {
             error: error.message,
-            code: error.code
+            code: error.code,
+            details: error.details
           })
           errores += batch.length
         } else {
@@ -823,7 +829,7 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       }
     }
 
-    console.log(`✅ Censo: ${insertados} procesados (nuevos o actualizados), ${errores} errores`)
+    console.log(`✅ Censo: ${insertados} insertados, ${errores} errores`)
 
     return {
       tabla: 'censo',
