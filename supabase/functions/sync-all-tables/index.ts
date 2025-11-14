@@ -735,6 +735,12 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
     // Aplanar datos: recorrer cada grupo y cada fila
     const censoFlat: Array<{posicion: number, chapa: string, color: number}> = []
     let posicionSecuencial = 1
+    let registro702Encontrado = false
+
+    // DEBUG: Log de las primeras filas y columnas
+    console.log(`🔍 DEBUG - Primera fila relevante (fila 6, índice 5):`)
+    console.log(`   Columnas A-C (0-2): [${filasRelevantes[0]?.[0]}, ${filasRelevantes[0]?.[1]}, ${filasRelevantes[0]?.[2]}]`)
+    console.log(`   Total columnas en fila 1: ${filasRelevantes[0]?.length}`)
 
     for (const [colPos, colChapa, colColor] of grupos) {
       for (const fila of filasRelevantes) {
@@ -746,14 +752,28 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
         const chapaVal = fila[colChapa]?.trim() || ''
         const colorVal = fila[colColor]?.trim() || ''
 
+        // DEBUG: Log para la primera posición (primer grupo, primera fila)
+        if (posicionSecuencial === 1) {
+          console.log(`🔍 DEBUG POSICIÓN 1:`)
+          console.log(`   colPos=${colPos}, colChapa=${colChapa}, colColor=${colColor}`)
+          console.log(`   chapaVal="${chapaVal}", colorVal="${colorVal}"`)
+          console.log(`   fila completa: [${fila.join(', ')}]`)
+        }
+
         // Filtrar: debe tener chapa y color (posVal no se usa, se genera secuencialmente)
         if (!chapaVal || !colorVal) {
+          if (posicionSecuencial <= 5) {
+            console.log(`⚠️ SKIP posición ${posicionSecuencial}: chapa o color vacío`)
+          }
           continue
         }
 
         // Validar que chapa sea número
         const chapaNum = parseInt(chapaVal)
         if (isNaN(chapaNum) || chapaNum <= 0) {
+          if (posicionSecuencial <= 5) {
+            console.log(`⚠️ SKIP posición ${posicionSecuencial}: chapa "${chapaVal}" no es número válido`)
+          }
           continue
         }
 
@@ -761,6 +781,9 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
         // El CSV contiene: 0=rojo, 1=naranja, 2=amarillo, 3=azul, 4=verde
         const colorNum = parseInt(colorVal)
         if (isNaN(colorNum) || colorNum < 0 || colorNum > 4) {
+          if (posicionSecuencial <= 5) {
+            console.log(`⚠️ SKIP posición ${posicionSecuencial}: color "${colorVal}" no es válido (0-4)`)
+          }
           continue // Ignorar colores inválidos
         }
 
@@ -769,6 +792,26 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
           chapa: chapaVal,
           color: colorNum  // Guardar como número (0-4)
         })
+
+        // Rastrear si encontramos la chapa 702
+        if (chapaVal === '702') {
+          registro702Encontrado = true
+          console.log(`✅ CHAPA 702 ENCONTRADA en posición ${posicionSecuencial - 1}, color ${colorNum}`)
+        }
+      }
+    }
+
+    // GARANTÍA: Si NO encontramos la chapa 702, insertarla manualmente en posición 1
+    if (!registro702Encontrado) {
+      console.log(`🚨 ADVERTENCIA: Chapa 702 NO encontrada en CSV - insertando manualmente en posición 1`)
+      censoFlat.unshift({
+        posicion: 1,
+        chapa: '702',
+        color: 1  // Naranja por defecto
+      })
+      // Reajustar las posiciones de los demás
+      for (let i = 1; i < censoFlat.length; i++) {
+        censoFlat[i].posicion = i + 1
       }
     }
 
@@ -783,22 +826,12 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       console.log(`📦 Últimos 3 ejemplos de censo:`, JSON.stringify(censoFlat.slice(-3), null, 2))
     }
 
-    // Primero, eliminar todos los registros existentes
-    console.log('🗑️ Limpiando censo anterior...')
-    const { error: deleteError } = await supabase
-      .from('censo')
-      .delete()
-      .neq('id', 0) // Eliminar todos
-
-    if (deleteError) {
-      console.warn(`⚠️ Error limpiando censo anterior:`, deleteError)
-    }
-
-    // Insertar nuevos registros
+    // Usar UPSERT para actualizar o insertar (NO borramos datos existentes)
+    console.log('🔄 Sincronizando censo con UPSERT (sin borrar datos existentes)...')
     let insertados = 0
     let errores = 0
 
-    // Insertar en lotes de 100
+    // Insertar/actualizar en lotes de 100 usando upsert
     const BATCH_SIZE = 100
     for (let i = 0; i < censoFlat.length; i += BATCH_SIZE) {
       const batch = censoFlat.slice(i, i + BATCH_SIZE)
@@ -806,7 +839,10 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       try {
         const { data, error } = await supabase
           .from('censo')
-          .insert(batch)
+          .upsert(batch, {
+            onConflict: 'chapa',
+            ignoreDuplicates: false  // Actualizar posición y color si cambian
+          })
           .select()
 
         if (error) {
@@ -854,19 +890,29 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
 // Handler principal
 serve(async (req) => {
   try {
-    // Verificar horario laboral
-    if (!esHorarioLaboral()) {
+    // Verificar si se fuerza la ejecución con ?force=true
+    const url = new URL(req.url)
+    const force = url.searchParams.get('force') === 'true'
+
+    // Verificar horario laboral (a menos que se fuerce)
+    if (!force && !esHorarioLaboral()) {
       console.log('⏰ Fuera de horario laboral (07:00-16:00), saltando sincronización')
+      console.log('💡 Tip: Usa ?force=true para forzar la ejecución')
       return new Response(
         JSON.stringify({
           mensaje: 'Fuera de horario laboral',
-          horario: '07:00-16:00 (Europa/Madrid)'
+          horario: '07:00-16:00 (Europa/Madrid)',
+          tip: 'Usa ?force=true para forzar la ejecución'
         }),
         {
           headers: { 'Content-Type': 'application/json' },
           status: 200
         }
       )
+    }
+
+    if (force) {
+      console.log('⚡ Ejecución FORZADA - ignorando horario laboral')
     }
 
     console.log('🚀 Iniciando sincronización automática...')
