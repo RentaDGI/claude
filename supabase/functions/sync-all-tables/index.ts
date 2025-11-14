@@ -11,8 +11,9 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const URLS = {
   // CSV públicos de la empresa
   jornales: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTtbkA94xqjf81lsR7bLKKtyES2YBDKs8J2T4UrSEan7e5Z_eaptShCA78R1wqUyYyASJxmHj3gDnY/pub?gid=1388412839&single=true&output=csv',
-  // Censo original - se procesará en el código (filas 6-55, columnas A-AG en grupos de 3)
-  censo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrMuapybwZUEGPR1vsP9p1_nlWvznyl0sPD4xWsNJ7HdXCj1ABY1EpU1um538HHZQyJtoAe5Niwrxq/pub?gid=841547354&single=true&output=csv',
+
+  // Censo - Hoja simple con columnas: posicion, chapa, color
+  censo: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=1216182924',
 
   // Google Sheets privados (temporalmente hasta migración completa)
   irpf: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=988244680',
@@ -695,113 +696,120 @@ async function sincronizarForo(supabase: any): Promise<SyncResult> {
   }
 }
 
-// 5. SINCRONIZAR CENSO desde CSV original (procesamiento horizontal A-AG)
-// Replica la lógica de la fórmula ARRAYFORMULA de Google Sheets
+// 5. SINCRONIZAR CENSO desde Google Sheets
+// Lee directamente de la hoja con columnas: posicion, chapa, color
 async function sincronizarCenso(supabase: any): Promise<SyncResult> {
   try {
-    console.log('📥 Sincronizando censo desde CSV original...')
+    console.log('📥 Sincronizando censo desde Google Sheets...')
     console.log('📍 URL:', URLS.censo)
 
     const csvText = await fetchConReintentos(URLS.censo)
     console.log(`✅ CSV descargado: ${csvText.length} caracteres`)
 
     const { headers, rows } = parseCSV(csvText)
-    console.log(`📊 CSV parseado: ${rows.length} filas totales`)
+    console.log(`📊 Headers: ${headers.join(', ')}`)
+    console.log(`📋 Total de filas: ${rows.length}`)
 
-    if (rows.length < 55) {
-      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'CSV incompleto (menos de 55 filas)' }
+    if (rows.length === 0) {
+      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'CSV vacío' }
     }
 
-    // Extraer filas 6-55 (índices 5-54 en array 0-indexed)
-    const filasRelevantes = rows.slice(5, 55) // Filas 6 a 55
-    console.log(`📋 Procesando filas 6-55: ${filasRelevantes.length} filas`)
+    // Detectar índices de columnas (soporta variaciones en nombres)
+    const indices: Record<string, number> = {}
+    headers.forEach((header, idx) => {
+      const h = header.toLowerCase().trim()
+      if (h === 'posicion' || h === 'posición' || h === 'pos') {
+        indices['posicion'] = idx
+      } else if (h === 'chapa') {
+        indices['chapa'] = idx
+      } else if (h === 'color') {
+        indices['color'] = idx
+      }
+    })
 
-    // Grupos de columnas (cada grupo tiene 3 columnas: posicion, chapa, color)
-    // A-C=0-2, D-F=3-5, G-I=6-8, J-L=9-11, M-O=12-14, P-R=15-17, S-U=18-20, V-X=21-23, Y-AA=24-26, AB-AD=27-29, AE-AG=30-32
-    const grupos = [
-      [0, 1, 2],    // A, B, C
-      [3, 4, 5],    // D, E, F
-      [6, 7, 8],    // G, H, I
-      [9, 10, 11],  // J, K, L
-      [12, 13, 14], // M, N, O
-      [15, 16, 17], // P, Q, R
-      [18, 19, 20], // S, T, U
-      [21, 22, 23], // V, W, X
-      [24, 25, 26], // Y, Z, AA
-      [27, 28, 29], // AB, AC, AD
-      [30, 31, 32]  // AE, AF, AG
-    ]
+    console.log(`🗺️ Índices detectados:`, indices)
 
-    // Aplanar datos: recorrer cada grupo y cada fila
-    const censoFlat: Array<{posicion: number, chapa: string, color: number}> = []
-    let posicionSecuencial = 1
+    // Si no se detectaron, asumir orden: posicion, chapa, color
+    if (!indices['posicion']) indices['posicion'] = 0
+    if (!indices['chapa']) indices['chapa'] = 1
+    if (!indices['color']) indices['color'] = 2
 
-    for (const [colPos, colChapa, colColor] of grupos) {
-      for (const fila of filasRelevantes) {
-        // Asegurarse de que la fila tenga suficientes columnas
-        if (fila.length <= colColor) {
-          continue
-        }
+    let insertados = 0
+    let errores = 0
+    let filasIgnoradas = 0
+    const censoData: Array<{posicion: number, chapa: string, color: number}> = []
 
-        const chapaVal = fila[colChapa]?.trim() || ''
-        const colorVal = fila[colColor]?.trim() || ''
+    for (const values of rows) {
+      if (values.length < 3) {
+        filasIgnoradas++
+        continue
+      }
 
-        // Filtrar: debe tener chapa y color (posVal no se usa, se genera secuencialmente)
-        if (!chapaVal || !colorVal) {
-          continue
-        }
+      const posicionStr = values[indices['posicion']]?.trim() || ''
+      const chapaStr = values[indices['chapa']]?.trim() || ''
+      const colorStr = values[indices['color']]?.trim() || ''
 
-        // Validar que chapa sea número
-        const chapaNum = parseInt(chapaVal)
-        if (isNaN(chapaNum) || chapaNum <= 0) {
-          continue
-        }
+      // Validar datos
+      if (!posicionStr || !chapaStr || !colorStr) {
+        filasIgnoradas++
+        continue
+      }
 
-        // Validar y convertir color a número (0-4)
-        // El CSV contiene: 0=rojo, 1=naranja, 2=amarillo, 3=azul, 4=verde
-        const colorNum = parseInt(colorVal)
-        if (isNaN(colorNum) || colorNum < 0 || colorNum > 4) {
-          continue // Ignorar colores inválidos
-        }
+      const posicion = parseInt(posicionStr)
+      const chapa = chapaStr
+      const color = parseInt(colorStr)
 
-        censoFlat.push({
-          posicion: posicionSecuencial++,
-          chapa: chapaVal,
-          color: colorNum  // Guardar como número (0-4)
-        })
+      // Validar números
+      if (isNaN(posicion) || posicion <= 0) {
+        filasIgnoradas++
+        continue
+      }
+
+      const chapaNum = parseInt(chapa)
+      if (isNaN(chapaNum) || chapaNum <= 0) {
+        filasIgnoradas++
+        continue
+      }
+
+      // Validar color (0-4)
+      if (isNaN(color) || color < 0 || color > 4) {
+        filasIgnoradas++
+        continue
+      }
+
+      censoData.push({ posicion, chapa, color })
+
+      // Log especial para chapa 702
+      if (chapa === '702') {
+        console.log(`✅ CHAPA 702 ENCONTRADA - Posición: ${posicion}, Color: ${color}`)
       }
     }
 
-    console.log(`✅ ${censoFlat.length} registros de censo procesados (aplanados)`)
+    console.log(`✅ ${censoData.length} registros válidos procesados`)
+    console.log(`⚠️ ${filasIgnoradas} filas ignoradas`)
 
-    if (censoFlat.length === 0) {
-      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'No se encontraron datos válidos en el censo' }
+    if (censoData.length === 0) {
+      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'No se encontraron datos válidos' }
     }
 
-    if (censoFlat.length > 0) {
-      console.log(`📦 Primeros 5 ejemplos de censo:`, JSON.stringify(censoFlat.slice(0, 5), null, 2))
-      console.log(`📦 Últimos 3 ejemplos de censo:`, JSON.stringify(censoFlat.slice(-3), null, 2))
-    }
+    // Mostrar primeros 5 ejemplos
+    console.log(`📦 Primeros 5 registros:`, JSON.stringify(censoData.slice(0, 5), null, 2))
 
-    // Primero, eliminar todos los registros existentes
-    console.log('🗑️ Limpiando censo anterior...')
+    // ESTRATEGIA: Borrar todo y reinsertar (para garantizar que no queden datos viejos)
+    console.log('🗑️ Limpiando tabla censo...')
     const { error: deleteError } = await supabase
       .from('censo')
       .delete()
-      .neq('id', 0) // Eliminar todos
+      .neq('id', 0) // Borra todos los registros
 
     if (deleteError) {
-      console.warn(`⚠️ Error limpiando censo anterior:`, deleteError)
+      console.warn(`⚠️ Error limpiando censo:`, deleteError.message)
     }
 
-    // Insertar nuevos registros
-    let insertados = 0
-    let errores = 0
-
-    // Insertar en lotes de 100
+    // Insertar todos los registros en lotes
     const BATCH_SIZE = 100
-    for (let i = 0; i < censoFlat.length; i += BATCH_SIZE) {
-      const batch = censoFlat.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < censoData.length; i += BATCH_SIZE) {
+      const batch = censoData.slice(i, i + BATCH_SIZE)
 
       try {
         const { data, error } = await supabase
@@ -826,6 +834,20 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
     }
 
     console.log(`✅ Censo: ${insertados} insertados, ${errores} errores`)
+
+    // VERIFICACIÓN FINAL: Confirmar que chapa 702 está en la base de datos
+    console.log('🔍 VERIFICACIÓN FINAL de chapa 702...')
+    const { data: chapa702, error: errorVerif } = await supabase
+      .from('censo')
+      .select('*')
+      .eq('chapa', '702')
+      .single()
+
+    if (errorVerif || !chapa702) {
+      console.error('❌ CHAPA 702 NO ENCONTRADA EN SUPABASE después de sincronización!')
+    } else {
+      console.log(`✅ CHAPA 702 CONFIRMADA:`, JSON.stringify(chapa702, null, 2))
+    }
 
     return {
       tabla: 'censo',
@@ -854,19 +876,29 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
 // Handler principal
 serve(async (req) => {
   try {
-    // Verificar horario laboral
-    if (!esHorarioLaboral()) {
+    // Verificar si se fuerza la ejecución con ?force=true
+    const url = new URL(req.url)
+    const force = url.searchParams.get('force') === 'true'
+
+    // Verificar horario laboral (a menos que se fuerce)
+    if (!force && !esHorarioLaboral()) {
       console.log('⏰ Fuera de horario laboral (07:00-16:00), saltando sincronización')
+      console.log('💡 Tip: Usa ?force=true para forzar la ejecución')
       return new Response(
         JSON.stringify({
           mensaje: 'Fuera de horario laboral',
-          horario: '07:00-16:00 (Europa/Madrid)'
+          horario: '07:00-16:00 (Europa/Madrid)',
+          tip: 'Usa ?force=true para forzar la ejecución'
         }),
         {
           headers: { 'Content-Type': 'application/json' },
           status: 200
         }
       )
+    }
+
+    if (force) {
+      console.log('⚡ Ejecución FORZADA - ignorando horario laboral')
     }
 
     console.log('🚀 Iniciando sincronización automática...')
