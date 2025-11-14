@@ -11,8 +11,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const URLS = {
   // CSV públicos de la empresa
   jornales: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTtbkA94xqjf81lsR7bLKKtyES2YBDKs8J2T4UrSEan7e5Z_eaptShCA78R1wqUyYyASJxmHj3gDnY/pub?gid=1388412839&single=true&output=csv',
-  // Censo limpio (formato procesado: posicion,chapa,color) - misma URL que usa la PWA
-  censo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcJ5Irxl93zwDqehuLW7-MsuVtphRDtmF8Rwp-yueqcAYRfgrTtEdKDwX8WKkJj1m0rVJc8AncGN_A/pub?gid=1216182924&single=true&output=csv',
+  // Censo original - se procesará en el código (filas 6-55, columnas A-AG en grupos de 3)
+  censo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrMuapybwZUEGPR1vsP9p1_nlWvznyl0sPD4xWsNJ7HdXCj1ABY1EpU1um538HHZQyJtoAe5Niwrxq/pub?gid=841547354&single=true&output=csv',
 
   // Google Sheets privados (temporalmente hasta migración completa)
   irpf: 'https://docs.google.com/spreadsheets/d/1j-IaOHXoLEP4bK2hjdn2uAYy8a2chqiQSOw4Nfxoyxc/export?format=csv&gid=988244680',
@@ -695,22 +695,21 @@ async function sincronizarForo(supabase: any): Promise<SyncResult> {
   }
 }
 
-// 5. SINCRONIZAR CENSO desde CSV (formato: posicion,chapa,color)
+// 5. SINCRONIZAR CENSO desde CSV original (procesamiento horizontal A-AG)
+// Replica la lógica de la fórmula ARRAYFORMULA de Google Sheets
 async function sincronizarCenso(supabase: any): Promise<SyncResult> {
   try {
-    console.log('📥 Sincronizando censo desde CSV...')
+    console.log('📥 Sincronizando censo desde CSV original...')
     console.log('📍 URL:', URLS.censo)
 
     const csvText = await fetchConReintentos(URLS.censo)
     console.log(`✅ CSV descargado: ${csvText.length} caracteres`)
-    console.log(`📄 Primeras 500 chars: ${csvText.substring(0, 500)}`)
 
     const { headers, rows } = parseCSV(csvText)
-    console.log(`📊 Headers del censo (${headers.length}): ${headers.join(', ')}`)
-    console.log(`📋 Filas del censo: ${rows.length}`)
+    console.log(`📊 CSV parseado: ${rows.length} filas totales`)
 
-    if (rows.length === 0) {
-      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'CSV vacío' }
+    if (rows.length < 55) {
+      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'CSV incompleto (menos de 55 filas)' }
     }
 
     // Mapeo de colores: 4=verde, 3=azul, 2=amarillo, 1=naranja, 0=rojo
@@ -722,69 +721,72 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
       '0': 'red'
     }
 
-    // El CSV debe tener formato: posicion,chapa,color
-    // Detectar índices de columnas
-    const indices: Record<string, number> = {}
-    headers.forEach((header, idx) => {
-      const h = header.toLowerCase().trim()
-      if (h === 'posicion' || h === 'position' || h === 'pos') {
-        indices['posicion'] = idx
-      } else if (h === 'chapa') {
-        indices['chapa'] = idx
-      } else if (h === 'color') {
-        indices['color'] = idx
+    // Extraer filas 6-55 (índices 5-54 en array 0-indexed)
+    const filasRelevantes = rows.slice(5, 55) // Filas 6 a 55
+    console.log(`📋 Procesando filas 6-55: ${filasRelevantes.length} filas`)
+
+    // Grupos de columnas (cada grupo tiene 3 columnas: posicion, chapa, color)
+    // A-C=0-2, D-F=3-5, G-I=6-8, J-L=9-11, M-O=12-14, P-R=15-17, S-U=18-20, V-X=21-23, Y-AA=24-26, AB-AD=27-29, AE-AG=30-32
+    const grupos = [
+      [0, 1, 2],    // A, B, C
+      [3, 4, 5],    // D, E, F
+      [6, 7, 8],    // G, H, I
+      [9, 10, 11],  // J, K, L
+      [12, 13, 14], // M, N, O
+      [15, 16, 17], // P, Q, R
+      [18, 19, 20], // S, T, U
+      [21, 22, 23], // V, W, X
+      [24, 25, 26], // Y, Z, AA
+      [27, 28, 29], // AB, AC, AD
+      [30, 31, 32]  // AE, AF, AG
+    ]
+
+    // Aplanar datos: recorrer cada grupo y cada fila
+    const censoFlat: Array<{posicion: number, chapa: string, color: string}> = []
+    let posicionSecuencial = 1
+
+    for (const [colPos, colChapa, colColor] of grupos) {
+      for (const fila of filasRelevantes) {
+        // Asegurarse de que la fila tenga suficientes columnas
+        if (fila.length <= colColor) {
+          continue
+        }
+
+        const posVal = fila[colPos]?.trim() || ''
+        const chapaVal = fila[colChapa]?.trim() || ''
+        const colorVal = fila[colColor]?.trim() || ''
+
+        // Filtrar: debe tener valores en los 3 campos
+        if (!posVal || !chapaVal || !colorVal) {
+          continue
+        }
+
+        // Validar que chapa sea número
+        const chapaNum = parseInt(chapaVal)
+        if (isNaN(chapaNum) || chapaNum <= 0) {
+          continue
+        }
+
+        // Convertir color numérico a nombre
+        const colorNombre = colorMap[colorVal] || 'green'
+
+        censoFlat.push({
+          posicion: posicionSecuencial++,
+          chapa: chapaVal,
+          color: colorNombre
+        })
       }
-    })
-
-    // Si no se encontraron headers, asumir orden: posicion, chapa, color
-    if (!indices['posicion']) indices['posicion'] = 0
-    if (!indices['chapa']) indices['chapa'] = 1
-    if (!indices['color']) indices['color'] = 2
-
-    console.log(`🗺️ Índices detectados:`, indices)
-
-    const censoData = []
-    let filasIgnoradas = 0
-
-    for (const values of rows) {
-      if (values.length < 3) {
-        filasIgnoradas++
-        continue
-      }
-
-      const posicion = values[indices['posicion']]?.trim()
-      const chapa = values[indices['chapa']]?.trim()
-      const colorNum = values[indices['color']]?.trim()
-
-      // Validar que posición y chapa sean números
-      const posicionNum = parseInt(posicion)
-      const chapaNum = parseInt(chapa)
-
-      if (!posicion || isNaN(posicionNum) || posicionNum <= 0) {
-        filasIgnoradas++
-        continue
-      }
-
-      if (!chapa || isNaN(chapaNum) || chapaNum <= 0) {
-        filasIgnoradas++
-        continue
-      }
-
-      // Convertir color numérico a nombre
-      const colorNombre = colorMap[colorNum] || 'green'
-
-      censoData.push({
-        posicion: posicionNum,
-        chapa: chapa,
-        color: colorNombre
-      })
     }
 
-    console.log(`✅ ${censoData.length} registros de censo procesados`)
-    console.log(`⚠️ ${filasIgnoradas} filas ignoradas (datos inválidos)`)
+    console.log(`✅ ${censoFlat.length} registros de censo procesados (aplanados)`)
 
-    if (censoData.length > 0) {
-      console.log(`📦 Primeros 3 ejemplos de censo:`, JSON.stringify(censoData.slice(0, 3), null, 2))
+    if (censoFlat.length === 0) {
+      return { tabla: 'censo', exito: false, insertados: 0, duplicados: 0, errores: 0, mensaje: 'No se encontraron datos válidos en el censo' }
+    }
+
+    if (censoFlat.length > 0) {
+      console.log(`📦 Primeros 5 ejemplos de censo:`, JSON.stringify(censoFlat.slice(0, 5), null, 2))
+      console.log(`📦 Últimos 3 ejemplos de censo:`, JSON.stringify(censoFlat.slice(-3), null, 2))
     }
 
     // Primero, eliminar todos los registros existentes
@@ -804,8 +806,8 @@ async function sincronizarCenso(supabase: any): Promise<SyncResult> {
 
     // Insertar en lotes de 100
     const BATCH_SIZE = 100
-    for (let i = 0; i < censoData.length; i += BATCH_SIZE) {
-      const batch = censoData.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < censoFlat.length; i += BATCH_SIZE) {
+      const batch = censoFlat.slice(i, i + BATCH_SIZE)
 
       try {
         const { data, error } = await supabase
