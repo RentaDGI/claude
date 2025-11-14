@@ -118,19 +118,13 @@ CREATE INDEX idx_puertas_chapa ON puertas(chapa);
 -- Estado de disponibilidad de cada trabajador
 CREATE TABLE IF NOT EXISTS censo (
   id BIGSERIAL PRIMARY KEY,
-  fecha DATE NOT NULL,
-  posicion INTEGER, -- Posición en el censo
-  chapa VARCHAR(10),
-  color VARCHAR(20), -- 'green' (disponible), 'red' (no disponible), 'yellow', etc.
-  estado VARCHAR(100), -- Texto descriptivo del estado
-  observaciones TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-
-  -- Una posición única por fecha
-  UNIQUE(fecha, posicion)
+  posicion INTEGER, -- Posición en el censo (secuencial: 1, 2, 3...)
+  chapa VARCHAR(10), -- Número de chapa del trabajador
+  color INTEGER, -- Código de color: 0=rojo, 1=naranja, 2=amarillo, 3=azul, 4=verde
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_censo_fecha ON censo(fecha DESC);
+CREATE INDEX idx_censo_posicion ON censo(posicion);
 CREATE INDEX idx_censo_chapa ON censo(chapa);
 CREATE INDEX idx_censo_color ON censo(color);
 
