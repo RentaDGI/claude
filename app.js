@@ -488,19 +488,15 @@ async function handleLogin() {
   try {
     console.log('🔐 Intentando login para chapa:', chapa);
 
-    // --- ¡ADVERTENCIA DE SEGURIDAD! ---
-    // La verificación directa de contraseña sin hashing aquí es INSEGURA para producción.
-    // Lo ideal sería:
-    // 1. Guardar password_hash y password_salt en la tabla 'usuarios'.
-    // 2. Hacer una llamada a una Edge Function de Supabase o a un backend seguro
-    //    que compare el 'password' ingresado con el 'password_hash' + 'password_salt'.
-    // Por ahora, se compara directamente para que funcione con tu estructura actual.
+    // --- ⚠️ ADVERTENCIA DE SEGURIDAD ---
+    // Las contraseñas se guardan en TEXTO PLANO (sin hashing).
+    // Esto es INSEGURO para producción. Cualquiera con acceso a la BD puede ver las contraseñas.
     // --- FIN ADVERTENCIA ---
 
     // Asumimos que `supabase` está disponible globalmente (desde supabase.js)
     const { data: userData, error: loginError } = await supabase
       .from('usuarios')
-         .select('chapa, nombre, password_hash') // <--- ¡CORREGIDO! 
+         .select('chapa, nombre, password_hash') // password_hash contiene contraseña en texto plano
       .eq('chapa', chapa)
       .single();
 
@@ -516,8 +512,7 @@ async function handleLogin() {
       throw new Error('Chapa no encontrada');
     }
 
-    // Comparamos la contraseña directamente con el valor almacenado
-    // (¡Recordatorio: ¡Esto debe ser una comparación de hash en PROD! )
+    // Comparamos la contraseña directamente (texto plano)
     const isPasswordValid = (password === userData.password_hash);
 
     if (isPasswordValid) {
@@ -3367,72 +3362,6 @@ async function loadSueldometro() {
     };
 
 
-    // Función auxiliar para recalcular los totales de la quincena (bruto, neto, base, prima)
-    // y los totales globales (bruto, neto, promedio)
-    const actualizarTotales = () => {
-        // 1. Recalcular y actualizar totales de la QUINCENA actual (la card que disparó el evento)
-        let nuevoTotalBaseQuincena = 0;
-        let nuevoTotalPrimaExtrasQuincena = 0; // Suma de prima + relevo + remate
-        let nuevoTotalBrutoQuincena = 0;
-        let nuevoTotalNetoQuincena = 0;
-
-        // Recorrer los jornales ya procesados y actualizados en `jornalesConSalarioQuincena`
-        jornalesQuincena.forEach(jornal => {
-            // Leer los valores actuales de la fila (estos ya están actualizados por los event listeners)
-            const row = document.querySelector(`tr[data-lock-key="${jornal.fecha}_${jornal.jornada.replace(/\s+a\s+/g, '-').replace(/\s+/g, '')}"]`);
-            if (row) {
-                const brutoFila = parseFloat(row.querySelector('.bruto-value strong')?.textContent.replace('€', '') || '0');
-                const netoFila = parseFloat(row.querySelector('.neto-value strong')?.textContent.replace('€', '') || '0');
-                const baseFila = parseFloat(row.querySelector('.base-value')?.textContent.replace('€', '').replace('*', '') || '0');
-
-                nuevoTotalBrutoQuincena += brutoFila;
-                nuevoTotalNetoQuincena += netoFila;
-                nuevoTotalBaseQuincena += baseFila;
-                nuevoTotalPrimaExtrasQuincena += (brutoFila - baseFila); // Prima y extras
-            }
-        });
-
-        // Actualizar el resumen de la quincena en el DOM
-        const summaryItems = card.querySelectorAll('.quincena-summary .summary-value');
-        if (summaryItems[0]) summaryItems[0].textContent = `${jornalesQuincena.length}`; // Jornales
-        if (summaryItems[1]) summaryItems[1].textContent = `${nuevoTotalBaseQuincena.toFixed(2)}€`; // Base
-        if (summaryItems[2]) summaryItems[2].textContent = `${nuevoTotalPrimaExtrasQuincena.toFixed(2)}€`; // Prima
-
-        // Actualizar bruto y neto en el header de la quincena
-        const brutoValueHeader = card.querySelector('.quincena-total .bruto-value');
-        const netoValueHeader = card.querySelector('.quincena-total .neto-value');
-        if (brutoValueHeader) brutoValueHeader.textContent = `${nuevoTotalBrutoQuincena.toFixed(2)}€`;
-        if (netoValueHeader) netoValueHeader.textContent = `${nuevoTotalNetoQuincena.toFixed(2)}€`;
-
-        // 2. Recalcular y actualizar estadísticas GLOBALES (parte superior)
-        let totalGlobalBrutoActual = 0;
-        let totalGlobalNetoActual = 0;
-        let contadorJornalesGlobalActual = 0;
-
-        // Iterar sobre TODOS los jornales del array `jornalesConSalario` (que se mantiene actualizado)
-        jornalesConSalario.forEach(jornal => {
-            // Cada jornal.total ya ha sido actualizado por los event listeners
-            totalGlobalBrutoActual += jornal.total;
-            contadorJornalesGlobalActual++;
-        });
-        totalGlobalNetoActual = totalGlobalBrutoActual * (1 - irpfPorcentaje / 100);
-
-        const promedioBrutoGlobalActual = contadorJornalesGlobalActual > 0 ? totalGlobalBrutoActual / contadorJornalesGlobalActual : 0;
-
-        const statCards = stats.querySelectorAll('.stat-card .stat-value');
-        if (statCards.length >= 4) { // Asegurarse de que hay suficientes tarjetas
-            statCards[0].textContent = `${contadorJornalesGlobalActual}`; // Jornales Totales
-            statCards[1].textContent = `${totalGlobalBrutoActual.toFixed(2)}€`; // Total Bruto
-            statCards[2].textContent = `${totalGlobalNetoActual.toFixed(2)}€`; // Total Neto
-            statCards[3].textContent = `${promedioBrutoGlobalActual.toFixed(2)}€`; // Promedio Bruto
-
-            // Actualizar label con nuevo % IRPF si es necesario
-            const netoLabel = stats.querySelectorAll('.stat-card .stat-label')[2];
-            if (netoLabel) netoLabel.textContent = `Total Neto (Anual - ${irpfPorcentaje}% IRPF)`;
-        }
-    };
-
-
     quincenasArray.forEach(({ year, month, quincena, jornales: jornalesQuincena }) => { // Utilizar el array con salarios
       // Recalcular estos totales para el header de la quincena para que reflejen los datos ya actualizados
       // por la lógica del `jornalesConSalario` que ya tiene los valores bloqueados y recalculados.
@@ -3670,6 +3599,71 @@ async function loadSueldometro() {
       `;
 
       content.appendChild(card);
+
+      // Función auxiliar para recalcular los totales de la quincena (bruto, neto, base, prima)
+      // y los totales globales (bruto, neto, promedio)
+      const actualizarTotales = () => {
+          // 1. Recalcular y actualizar totales de la QUINCENA actual (la card que disparó el evento)
+          let nuevoTotalBaseQuincena = 0;
+          let nuevoTotalPrimaExtrasQuincena = 0; // Suma de prima + relevo + remate
+          let nuevoTotalBrutoQuincena = 0;
+          let nuevoTotalNetoQuincena = 0;
+
+          // Recorrer los jornales ya procesados y actualizados en `jornalesConSalarioQuincena`
+          jornalesQuincena.forEach(jornal => {
+              // Leer los valores actuales de la fila (estos ya están actualizados por los event listeners)
+              const row = document.querySelector(`tr[data-lock-key="${jornal.fecha}_${jornal.jornada.replace(/\s+a\s+/g, '-').replace(/\s+/g, '')}"]`);
+              if (row) {
+                  const brutoFila = parseFloat(row.querySelector('.bruto-value strong')?.textContent.replace('€', '') || '0');
+                  const netoFila = parseFloat(row.querySelector('.neto-value strong')?.textContent.replace('€', '') || '0');
+                  const baseFila = parseFloat(row.querySelector('.base-value')?.textContent.replace('€', '').replace('*', '') || '0');
+
+                  nuevoTotalBrutoQuincena += brutoFila;
+                  nuevoTotalNetoQuincena += netoFila;
+                  nuevoTotalBaseQuincena += baseFila;
+                  nuevoTotalPrimaExtrasQuincena += (brutoFila - baseFila); // Prima y extras
+              }
+          });
+
+          // Actualizar el resumen de la quincena en el DOM
+          const summaryItems = card.querySelectorAll('.quincena-summary .summary-value');
+          if (summaryItems[0]) summaryItems[0].textContent = `${jornalesQuincena.length}`; // Jornales
+          if (summaryItems[1]) summaryItems[1].textContent = `${nuevoTotalBaseQuincena.toFixed(2)}€`; // Base
+          if (summaryItems[2]) summaryItems[2].textContent = `${nuevoTotalPrimaExtrasQuincena.toFixed(2)}€`; // Prima
+
+          // Actualizar bruto y neto en el header de la quincena
+          const brutoValueHeader = card.querySelector('.quincena-total .bruto-value');
+          const netoValueHeader = card.querySelector('.quincena-total .neto-value');
+          if (brutoValueHeader) brutoValueHeader.textContent = `${nuevoTotalBrutoQuincena.toFixed(2)}€`;
+          if (netoValueHeader) netoValueHeader.textContent = `${nuevoTotalNetoQuincena.toFixed(2)}€`;
+
+          // 2. Recalcular y actualizar estadísticas GLOBALES (parte superior)
+          let totalGlobalBrutoActual = 0;
+          let totalGlobalNetoActual = 0;
+          let contadorJornalesGlobalActual = 0;
+
+          // Iterar sobre TODOS los jornales del array `jornalesConSalario` (que se mantiene actualizado)
+          jornalesConSalario.forEach(jornal => {
+              // Cada jornal.total ya ha sido actualizado por los event listeners
+              totalGlobalBrutoActual += jornal.total;
+              contadorJornalesGlobalActual++;
+          });
+          totalGlobalNetoActual = totalGlobalBrutoActual * (1 - irpfPorcentaje / 100);
+
+          const promedioBrutoGlobalActual = contadorJornalesGlobalActual > 0 ? totalGlobalBrutoActual / contadorJornalesGlobalActual : 0;
+
+          const statCards = stats.querySelectorAll('.stat-card .stat-value');
+          if (statCards.length >= 4) { // Asegurarse de que hay suficientes tarjetas
+              statCards[0].textContent = `${contadorJornalesGlobalActual}`; // Jornales Totales
+              statCards[1].textContent = `${totalGlobalBrutoActual.toFixed(2)}€`; // Total Bruto
+              statCards[2].textContent = `${totalGlobalNetoActual.toFixed(2)}€`; // Total Neto
+              statCards[3].textContent = `${promedioBrutoGlobalActual.toFixed(2)}€`; // Promedio Bruto
+
+              // Actualizar label con nuevo % IRPF si es necesario
+              const netoLabel = stats.querySelectorAll('.stat-card .stat-label')[2];
+              if (netoLabel) netoLabel.textContent = `Total Neto (Anual - ${irpfPorcentaje}% IRPF)`;
+          }
+      };
 
       // Event listener para inputs de movimientos
       card.querySelectorAll('.movimientos-input').forEach(input => {

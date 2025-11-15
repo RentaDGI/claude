@@ -1308,8 +1308,8 @@ async function getPrimasPersonalizadas(chapa, fechaInicio = null, fechaFin = nul
 }
 
 /**
- * Cambia la contraseña de un usuario de forma segura
- * Hashea la contraseña y la guarda en Supabase
+ * Cambia la contraseña de un usuario
+ * ⚠️ ADVERTENCIA: Guarda contraseñas en TEXTO PLANO (inseguro para producción)
  *
  * @param {string} chapa - Chapa del usuario
  * @param {string} currentPassword - Contraseña actual
@@ -1333,8 +1333,8 @@ async function cambiarContrasena(chapa, currentPassword, newPassword) {
       return { success: false, message: 'Usuario no encontrado' };
     }
 
-    // 2. Verificar contraseña actual
-    const isCurrentPasswordValid = await verifyPassword(currentPassword, usuario.password_hash);
+    // 2. Verificar contraseña actual (comparación directa en texto plano)
+    const isCurrentPasswordValid = (currentPassword === usuario.password_hash);
 
     if (!isCurrentPasswordValid) {
       console.error('❌ Contraseña actual incorrecta');
@@ -1343,15 +1343,14 @@ async function cambiarContrasena(chapa, currentPassword, newPassword) {
 
     console.log('✅ Contraseña actual verificada');
 
-    // 3. Hashear nueva contraseña
-    const newPasswordHash = await hashPassword(newPassword);
-    console.log('✅ Nueva contraseña hasheada');
+    // 3. Guardar nueva contraseña EN TEXTO PLANO (sin hashear)
+    console.log('⚠️ Guardando contraseña en texto plano (INSEGURO)');
 
     // 4. Actualizar en Supabase
     const { error: errorUpdate } = await supabase
       .from('usuarios')
       .update({
-        password_hash: newPasswordHash,
+        password_hash: newPassword, // Guardar en texto plano
         updated_at: new Date().toISOString()
       })
       .eq('chapa', chapa);
