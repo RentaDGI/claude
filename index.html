@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -472,6 +471,12 @@
             </div>
         </div>
         <div class="container">
+            <!-- AÑADIDO: Mensaje si no está logueado -->
+            <div id="push-not-logged-in-message" style="margin-top: 20px; padding: 15px; border: 1px solid #ffc107; background-color: #fff3cd; color: #856404; border-radius: 8px; display: none;">
+                <p>⚠️ Para activar las notificaciones personalizadas, por favor **inicia sesión** primero.</p>
+            </div>
+            <!-- FIN AÑADIDO -->
+            
             <div id="push-notification-controls" style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px;">
                 <p id="push-loading-message" style="display: none;">Cargando...</p>
                 <p id="push-error-message" style="color: red; display: none;"></p>
@@ -838,30 +843,47 @@
     const subscribePushBtn = document.getElementById('subscribe-push-btn');
     const unsubscribePushBtn = document.getElementById('unsubscribe-push-btn');
     const pushSubscribedMessage = document.getElementById('push-subscribed-message');
+    const pushNotLoggedInMessage = document.getElementById('push-not-logged-in-message'); // Nuevo mensaje de no logueado
 
     function updatePushUI(permission, isSubscribed, loading = false, error = null) {
         pushLoadingMessage.style.display = loading ? 'block' : 'none';
         pushErrorMessage.style.display = error ? 'block' : 'none';
         pushErrorMessage.textContent = error || '';
 
+        // Ocultar todos los estados por defecto
         pushDeniedMessage.style.display = 'none';
         enablePushBtn.style.display = 'none';
         subscribePushBtn.style.display = 'none';
         unsubscribePushBtn.style.display = 'none';
         pushSubscribedMessage.style.display = 'none';
+        pushNotLoggedInMessage.style.display = 'none'; // Ocultar el mensaje de no logueado por defecto
+
+        // Deshabilitar botones por defecto
+        enablePushBtn.disabled = true;
+        subscribePushBtn.disabled = true;
+        unsubscribePushBtn.disabled = true; // El botón de desuscribirse se habilita si hay suscripción
 
         if (loading) return;
+
+        // Lógica principal de la UI
+        if (!window.AppState.isAuthenticated) {
+            pushNotLoggedInMessage.style.display = 'block';
+            return; // Si no está logueado, solo mostrar este mensaje y deshabilitar todo
+        }
 
         if (permission === 'denied') {
             pushDeniedMessage.style.display = 'block';
         } else if (permission === 'default') {
             enablePushBtn.style.display = 'block';
+            enablePushBtn.disabled = false; // Habilitar si está logueado
         } else if (permission === 'granted') {
             if (isSubscribed) {
                 unsubscribePushBtn.style.display = 'block';
+                unsubscribePushBtn.disabled = false; // Habilitar desuscripción si hay suscripción
                 pushSubscribedMessage.style.display = 'block';
             } else {
                 subscribePushBtn.style.display = 'block';
+                subscribePushBtn.disabled = false; // Habilitar suscripción si está logueado
             }
         }
     }
@@ -880,20 +902,35 @@
     }
 
     async function initializePushNotifications() {
-        updatePushUI(Notification.permission, false, true); // Set initial loading state
+        console.log('Push: Inicializando notificaciones. ¿Usuario autenticado?', window.AppState.isAuthenticated, 'Chapa:', window.AppState.currentUser);
+        // Primero, actualizar la UI con el estado actual de autenticación para que el mensaje "no logueado" aparezca/desaparezca.
+        // Esto también deshabilitará/habilitará los botones de suscripción si es necesario.
+        updatePushUI(Notification.permission, false, true); // Pasar 'true' para indicar estado de carga inicial
+
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             updatePushUI(Notification.permission, false, false, 'Las notificaciones push no están soportadas por tu navegador.');
             return;
         }
 
-        const swRegistration = await navigator.serviceWorker.ready;
-        const subscription = await swRegistration.pushManager.getSubscription();
-        updatePushUI(Notification.permission, !!subscription, false);
+        try {
+            const swRegistration = await navigator.serviceWorker.ready;
+            const subscription = await swRegistration.pushManager.getSubscription();
+            updatePushUI(Notification.permission, !!subscription, false); // Actualizar UI con el estado real de suscripción
+        } catch (error) {
+            console.error('Error al obtener la suscripción existente del Service Worker:', error);
+            updatePushUI(Notification.permission, false, false, 'Error al cargar el estado de suscripción.');
+        }
     }
 
     async function subscribeUser() {
         updatePushUI(Notification.permission, false, true);
         try {
+            if (!window.AppState.isAuthenticated || !window.AppState.currentUser) {
+                // Esta verificación es redundante si updatePushUI ya deshabilita el botón,
+                // pero sirve como doble check y captura un posible error si el botón se habilita por accidente.
+                throw new Error("Debes iniciar sesión para suscribirte a notificaciones personalizadas.");
+            }
+
             const swRegistration = await navigator.serviceWorker.ready;
             const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
 
@@ -901,11 +938,17 @@
                 userVisibleOnly: true, 
                 applicationServerKey: convertedVapidKey,
             });
+            
+            console.log('Push: Intentando suscribir. Chapa a enviar:', window.AppState.currentUser);
+            const subscriptionWithChapa = { 
+                ...subscription.toJSON(), 
+                user_chapa: window.AppState.currentUser.toString() 
+            };
 
             const response = await fetch(`${BACKEND_API_URL}/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(subscription),
+                body: JSON.stringify(subscriptionWithChapa), 
             });
 
             if (!response.ok) {
@@ -938,7 +981,6 @@
                   if (!response.ok) {
                     const errorBody = await response.text();
                     console.warn(`Falló la desuscripción en el servidor: ${response.status} - ${errorBody}`);
-                    // Continuar con la desuscripción local aunque el servidor falle
                   }
 
                 await subscription.unsubscribe();
@@ -974,22 +1016,27 @@
 
     // Inicializar cuando la página de notificaciones sea visible
     const pushNotificationsPage = document.getElementById('page-push-notifications');
-    if (pushNotificationsPage) { // Asegurarse de que la página existe
-      const observerPushPage = new MutationObserver((mutations) => { 
-          mutations.forEach((mutation) => {
-              if (mutation.attributeName === 'class' && pushNotificationsPage.classList.contains('active')) {
-                  initializePushNotifications();
-              }
-          });
-      });
-      observerPushPage.observe(pushNotificationsPage, { attributes: true });
+    if (pushNotificationsPage) {
+        const observerPushPage = new MutationObserver((mutations) => { 
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class' && pushNotificationsPage.classList.contains('active')) {
+                    initializePushNotifications(); // Re-inicializar cuando la página se vuelve activa
+                }
+            });
+        });
+        observerPushPage.observe(pushNotificationsPage, { attributes: true });
 
-      // También inicializar si ya estamos en la página al cargar
-      if (pushNotificationsPage.classList.contains('active')) {
-          initializePushNotifications();
-      }
+        // También inicializar si ya estamos en la página al cargar
+        // Esto asegura que la UI se actualice correctamente al cargar la PWA
+        // y el estado de `AppState.isAuthenticated` sea considerado.
+        if (pushNotificationsPage.classList.contains('active')) {
+            initializePushNotifications();
+        }
     }
   </script>
   <!-- ========================================================================= -->
   <!-- FIN DE LA SECCIÓN AÑADIDA: LÓGICA DE NOTIFICACIONES PUSH -->
   <!-- ========================================================================= -->
+  
+</body>
+</html>
