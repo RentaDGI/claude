@@ -2787,6 +2787,7 @@ function determinarTipoDia(fecha, jornada) {
  * Carga y muestra el Sueldómetro con cálculo de salarios
  */
 async function loadSueldometro() {
+  console.log('🚀 DEBUG: loadSueldometro() ejecutándose - timestamp:', new Date().toISOString());
   const content = document.getElementById('sueldometro-content');
   const loading = document.getElementById('sueldometro-loading');
   const stats = document.getElementById('sueldometro-stats');
@@ -2794,6 +2795,7 @@ async function loadSueldometro() {
   if (!content) return;
 
   loading.classList.remove('hidden');
+  console.log('🧹 DEBUG: Limpiando contenido anterior');
   content.innerHTML = '';
   stats.innerHTML = '';
 
@@ -2910,6 +2912,7 @@ async function loadSueldometro() {
 
     // 2. Agrupar por quincena
     const quincenasMap = groupByQuincena(jornales);
+    console.log(`📅 DEBUG: Quincenas agrupadas: ${quincenasMap.size}`, Array.from(quincenasMap.keys()));
 
     // 3. Calcular salario para cada jornal
     const jornalesConSalario = jornales.map((jornal, index) => {
@@ -3361,8 +3364,11 @@ async function loadSueldometro() {
       }
     };
 
-
+    console.log(`🔢 DEBUG: Renderizando ${quincenasArray.length} quincenas`);
+    let quincenaCounter = 0;
     quincenasArray.forEach(({ year, month, quincena, jornales: jornalesQuincena }) => { // Utilizar el array con salarios
+      quincenaCounter++;
+      console.log(`📊 DEBUG: Renderizando quincena ${quincenaCounter}/${quincenasArray.length}: ${year}-${month}-${quincena} (${jornalesQuincena.length} jornales)`);
       // Recalcular estos totales para el header de la quincena para que reflejen los datos ya actualizados
       // por la lógica del `jornalesConSalario` que ya tiene los valores bloqueados y recalculados.
       const totalQuincenaBruto = jornalesQuincena.reduce((sum, j) => j.total ? sum + j.total : sum, 0);
