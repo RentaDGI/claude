@@ -927,7 +927,7 @@ async function loadContratacion() {
     try {
         // Asumiendo que SheetsAPI.syncJornalesFromCSV ahora invoca la Edge Function de sincronización
         // o tu lógica de sincronización ya la tienes configurada en Supabase Edge Functions programadas.
-        // Si no tienes una Edge Function de sincronización activable desde el cliente, puedes omitir esta línea
+        // Si  una Edge Function de sincronización activable desde el cliente, puedes omitir esta línea
         // y solo cargar los datos directamente.
         await SheetsAPI.syncJornalesFromCSV(); 
     } catch (syncError) {
@@ -980,7 +980,7 @@ async function loadContratacion() {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3>No hay asignaciones actuales</h3>
-          <p>No tienes contrataciones asignadas para hoy, mañana o pasado mañana.</p>
+          <p>No tienes contrataciones asignadas.</p>
         </div>
       `;
       return;
