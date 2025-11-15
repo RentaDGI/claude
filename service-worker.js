@@ -173,20 +173,24 @@ self.addEventListener('push', (event) => {
   // Parsea los datos que vienen del backend
   const data = event.data ? event.data.json() : {};
   // Valores por defecto si el backend no los envía
-  const { 
-    title = 'Nueva Contratación en Estiba VLC', 
-    body = '¡Se ha publicado una nueva contratación en el puerto!', 
-    url = '/' 
+  const {
+    title = 'Nueva Contratación en Estiba VLC',
+    body = '¡Se ha publicado una nueva contratación en el puerto!',
+    url = '/'
   } = data;
+
+  // Construir la URL correcta con el hash #contratacion
+  // Usamos self.location.origin para obtener la URL base actual de la PWA
+  const targetUrl = `${self.location.origin}/#contratacion`;
 
   const options = {
     body: body,
     // Usamos el icono que ya tienes en tu manifest y está en Imgur
-    icon: 'https://i.imgur.com/Q91Pi44.png', 
+    icon: 'https://i.imgur.com/Q91Pi44.png',
     badge: 'https://i.imgur.com/Q91Pi44.png', // Badge para móviles
     vibrate: [200, 100, 200], // Patrón de vibración
     data: {
-      url: url, // La URL a la que navegará el usuario al hacer clic en la notificación
+      url: targetUrl, // La URL a la que navegará el usuario al hacer clic en la notificación
       dateOfArrival: Date.now(),
       primaryKey: 'push-notification-id-' + Date.now(), // ID único para evitar notificaciones duplicadas
     },
@@ -207,25 +211,21 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close(); // Cierra la notificación al hacer clic
 
+  const urlToOpen = event.notification.data.url || `${self.location.origin}/#contratacion`;
+
   // Abre una nueva ventana o enfoca una existente
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Si ya hay una ventana abierta a tu dominio, intenta enfocarla
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Si ya hay una ventana abierta a tu dominio, intenta enfocarla y navegar
       for (const client of clientList) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          // Si la acción es 'ver-contratacion' y tiene una URL específica, navega allí
-          if (event.action === 'ver-contratacion' && event.notification.data.url) {
-            client.navigate(event.notification.data.url);
-          }
+          // Navegar a la URL de la notificación (que incluye #contratacion)
+          client.navigate(urlToOpen);
           return client.focus(); // Enfoca la ventana existente
         }
       }
-      // Si no hay ninguna ventana, abre una nueva
-      if (event.action === 'ver-contratacion' && event.notification.data.url) {
-        return clients.openWindow(event.notification.data.url);
-      }
-      // Si no hay URL específica en la notificación o es un clic general, abre la raíz de la app
-      return clients.openWindow(event.notification.data.url || '/'); 
+      // Si no hay ninguna ventana abierta, abre una nueva con la URL correcta
+      return clients.openWindow(urlToOpen);
     })
   );
 });
