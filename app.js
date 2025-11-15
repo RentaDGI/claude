@@ -215,7 +215,15 @@ async function initializeApp() {
  * Maneja la navegación basada en el hash de la URL
  * Permite deep linking desde notificaciones push
  */
+let isNavigatingProgrammatically = false; // Bandera para evitar bucles
+
 function handleHashNavigation() {
+  // Evitar bucles: si estamos navegando programáticamente, ignorar
+  if (isNavigatingProgrammatically) {
+    isNavigatingProgrammatically = false;
+    return;
+  }
+
   const hash = window.location.hash.slice(1); // Elimina el '#'
   if (hash && AppState.isAuthenticated) {
     console.log('📍 Navegando por hash:', hash);
@@ -808,6 +816,7 @@ function navigateTo(pageName) {
 
   // Actualizar hash en la URL (para deep linking)
   if (pageName !== 'login' && window.location.hash !== `#${pageName}`) {
+    isNavigatingProgrammatically = true; // Marcar como navegación programática
     window.location.hash = pageName;
   }
 
